@@ -41,8 +41,7 @@ class FloatingTimerManager: NSObject {
         panel.hasShadow = true
         panel.backgroundColor = .clear
 
-        let panelDelegate = PanelDelegate()
-        panelDelegate.onClose = { [weak self] in
+        let panelDelegate = PanelDelegate { [weak self] in
             self?.panels.removeValue(forKey: viewModel.id)
             self?.panelDelegates.removeValue(forKey: viewModel.id)
         }
@@ -61,9 +60,13 @@ class FloatingTimerManager: NSObject {
 }
 
 class PanelDelegate: NSObject, NSWindowDelegate {
-    var onClose: (() -> Void)?
+    private let onClose: () -> Void
+
+    init(onClose: @escaping () -> Void) {
+        self.onClose = onClose
+    }
 
     func windowWillClose(_ notification: Notification) {
-        onClose?()
+        onClose()
     }
 }
