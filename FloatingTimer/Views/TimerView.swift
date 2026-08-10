@@ -150,7 +150,7 @@ struct TimerView: View {
                                         .controlSize(.regular)
                                         .buttonStyle(.bordered)
                                         .buttonBorderShape(.circle)
-                                        .glassEffectID("stoprepeat", in: namespace)
+                                        .glassEffectID("edit", in: namespace)
                                     }
                                     
                                     Button(role: .destructive) {

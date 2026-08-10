@@ -6,17 +6,14 @@
 //
 
 import SwiftUI
-import AudioToolbox
 
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appViewModel
-    @Environment(\.openWindow) private var openWindow
     
     @State private var title: String = ""
     @State private var hours: Int = 0
     @State private var minutes: Int = 0
     @State private var seconds: Int = 0
-    @State private var presetMode: Bool = false
     
     @FocusState private var focusedField: TimeField?
     
@@ -89,11 +86,12 @@ struct ContentView: View {
                 }
                 
                 Button("Create Timer") {
-                    let timer = appViewModel.createTimer(
+                    if let timer = appViewModel.createTimer(
                         title: title,
                         seconds: totalSeconds
-                    )
-                    FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
+                    ) {
+                        FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
+                    }
                 }
                 .fontWidth(.expanded)
                 .buttonStyle(.glass)

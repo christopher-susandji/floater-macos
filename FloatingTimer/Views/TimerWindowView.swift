@@ -13,7 +13,7 @@ struct TimerWindowView: View {
 
     var body: some View {
         Group {
-            if let timerID, let timer = appViewModel.timerViewModels.first(where: { $0.id == timerID }) {
+            if let timerID, let timer = appViewModel.timerViewModel(id: timerID) {
                 TimerView(viewModel: timer)
             } else {
                 Text("Timer not found")

@@ -20,7 +20,8 @@ final class AppViewModel {
     }
     
     @discardableResult
-    func createTimer(title: String, seconds: Int) -> TimerViewModel {
+    func createTimer(title: String, seconds: Int) -> TimerViewModel? {
+        guard canCreateTimer else { return nil }
         let model = TimerModel(title: title, duration: TimeInterval(seconds))
         let viewModel = TimerViewModel(model: model)
         timerViewModels.append(viewModel)
