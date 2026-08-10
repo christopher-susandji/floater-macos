@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct FloatingTimerApp: App {
+    @State private var appViewModel = AppViewModel()
+    
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("Timer Manager") {
             ContentView()
+                .environment(appViewModel)
+                .frame(width: 300)
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 }
