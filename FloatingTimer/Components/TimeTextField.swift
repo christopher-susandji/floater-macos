@@ -42,7 +42,7 @@ struct TimeTextField: View {
                 
                 if shouldClearOnNextInput && !newValue.isEmpty {
                     shouldClearOnNextInput = false
-                    text = "0" + String(newValue.last ?? Character(""))
+text = "0" + String(newValue.last ?? "0")
                     value = Int(text) ?? 0
                     return
                 }
