@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		D2006E56301744900097A75A /* FloatingTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FloatingTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2006E56301744900097A75A /* Floater.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Floater.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,7 +40,7 @@
 		D2006E57301744900097A75A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D2006E56301744900097A75A /* FloatingTimer.app */,
+				D2006E56301744900097A75A /* Floater.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D2006E55301744900097A75A /* FloatingTimer */ = {
+		D2006E55301744900097A75A /* Floater */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D2006E61301744910097A75A /* Build configuration list for PBXNativeTarget "FloatingTimer" */;
+			buildConfigurationList = D2006E61301744910097A75A /* Build configuration list for PBXNativeTarget "Floater" */;
 			buildPhases = (
 				D2006E52301744900097A75A /* Sources */,
 				D2006E53301744900097A75A /* Frameworks */,
@@ -63,11 +63,11 @@
 			fileSystemSynchronizedGroups = (
 				D2006E58301744900097A75A /* FloatingTimer */,
 			);
-			name = FloatingTimer;
+			name = Floater;
 			packageProductDependencies = (
 			);
 			productName = FloatingTimer;
-			productReference = D2006E56301744900097A75A /* FloatingTimer.app */;
+			productReference = D2006E56301744900097A75A /* Floater.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D2006E51301744900097A75A /* Build configuration list for PBXProject "FloatingTimer" */;
+			buildConfigurationList = D2006E51301744900097A75A /* Build configuration list for PBXProject "Floater" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D2006E55301744900097A75A /* FloatingTimer */,
+				D2006E55301744900097A75A /* Floater */,
 			);
 		};
 /* End PBXProject section */
@@ -260,7 +260,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Floater;
+				INFOPLIST_KEY_CFBundleDisplayName = "Floater - Floating Timer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -268,7 +268,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.FloatingTimer;
+				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.Floater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -295,7 +295,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Floater;
+				INFOPLIST_KEY_CFBundleDisplayName = "Floater - Floating Timer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -303,7 +303,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.FloatingTimer;
+				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.Floater;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -318,7 +318,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D2006E51301744900097A75A /* Build configuration list for PBXProject "FloatingTimer" */ = {
+		D2006E51301744900097A75A /* Build configuration list for PBXProject "Floater" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D2006E5F301744910097A75A /* Debug */,
@@ -327,7 +327,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D2006E61301744910097A75A /* Build configuration list for PBXNativeTarget "FloatingTimer" */ = {
+		D2006E61301744910097A75A /* Build configuration list for PBXNativeTarget "Floater" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D2006E62301744910097A75A /* Debug */,
