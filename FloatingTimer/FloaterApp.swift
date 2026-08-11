@@ -8,11 +8,11 @@
 import SwiftUI
 
 @main
-struct FloatingTimerApp: App {
+struct FloaterApp: App {
     @State private var appViewModel = AppViewModel()
     
     var body: some Scene {
-        WindowGroup("Timer Manager") {
+        WindowGroup("Floater") {
             ContentView()
                 .environment(appViewModel)
                 .frame(width: 300)
