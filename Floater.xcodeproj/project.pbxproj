@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		D2006E56301744900097A75A /* Floater.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Floater.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Floater-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +33,7 @@
 		D2006E4D301744900097A75A = {
 			isa = PBXGroup;
 			children = (
+				D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */,
 				D2006E58301744900097A75A /* FloatingTimer */,
 				D2006E57301744900097A75A /* Products */,
 			);
@@ -260,7 +262,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Floater-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Floater - Floating Timer";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -295,7 +299,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Floater-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Floater - Floating Timer";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
