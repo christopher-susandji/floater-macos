@@ -23,6 +23,11 @@ final class TimerViewModel {
     
     var timerState: State = .idle
     
+    /// Bumped whenever something external (e.g. the timer list) requests that this
+    /// timer's floating panel open its preset-editing screen. `TimerView` observes
+    /// this via `.onChange` and toggles its own local `editMode` state accordingly.
+    var editRequestToken: Int = 0
+    
     @ObservationIgnored
     private var ticker: Timer?
     
@@ -44,11 +49,26 @@ final class TimerViewModel {
     }
     
     var id: UUID { model.id }
-    var title: String { model.title }
+    var title: String {
+        get { model.title }
+        set { model.title = newValue }
+    }
     var duration: TimeInterval { model.duration }
     
     var timeText: String {
         let total = max(0, Int(remaining))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let seconds = total % 60
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+    
+    var durationTimeText: String {
+        let total = max(0, Int(duration))
         let hours = total / 3600
         let minutes = (total % 3600) / 60
         let seconds = total % 60
@@ -72,12 +92,18 @@ final class TimerViewModel {
         self.remaining = model.duration
     }
     
+    /// Requests that this timer's floating panel open its preset-editing screen.
+    func requestEditMode() {
+        editRequestToken += 1
+    }
+    
     func startPause() {
         isRunning.toggle()
         withAnimation(.easeInOut) {
             self.timerState = isRunning ? .running : .paused
         }
         isRunning ? startTicker() : stopTicker()
+        editRequestToken = 0
     }
     
     func reset() {

@@ -16,6 +16,7 @@ struct FloaterApp: App {
         WindowGroup("Floater") {
             ContentView()
                 .environment(appViewModel)
+                .preferredColorScheme(.dark)
                 .frame(width: 300)
                 .onAppear {
                     NSWindow.allowsAutomaticWindowTabbing = false

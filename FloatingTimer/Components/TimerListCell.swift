@@ -8,63 +8,67 @@
 import SwiftUI
 
 struct TimerListCell: View {
-    var viewModel: TimerViewModel
+    @Bindable var viewModel: TimerViewModel
     var onDelete: (() -> Void)?
+    @Namespace private var namespace
+    @FocusState private var isTitleFocused: Bool
     
     var body: some View {
         HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.title.isEmpty ? "UNTITLED" : viewModel.title )
-                    
-                        .font(.system(.caption, design: .default))
-                        .fontWeight(.medium)
-                        .fontWidth(.expanded)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: Sizing.xxs) {
+                TextField("", text: $viewModel.title)
+                    .overlay(alignment: .leading) {
+                        if viewModel.title.isEmpty {
+                            Text(Constants.untitled)
+                                .foregroundStyle(.secondary)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .textFieldStyle(.plain)
+                    .font(.system(.caption, design: .default))
+                    .fontWeight(.medium)
+                    .fontWidth(.expanded)
+                    .foregroundStyle(viewModel.title.count > 0 ? .primary : Color.secondary.opacity(0.5))
+                    .focused($isTitleFocused)
+                    .onChange(of: viewModel.title) { oldValue, newValue in
+                        if newValue.count > Constants.characterLimit {
+                            viewModel.title = String(newValue.prefix(Constants.characterLimit))
+                        } else {
+                            viewModel.title = newValue.uppercased()
+                        }
+                    }
                 
                 Text(viewModel.timeText)
+                    .contentTransition(.numericText(countsDown: true))
                     .font(.system(.title, design: .monospaced))
                     .monospacedDigit()
                     .foregroundStyle(viewModel.isRunning ? .primary : .secondary)
-                
+                    .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
+                    .transition(.opacity)
             }
+            
             Spacer()
-            ControlGroup {
-                Button {
-                    viewModel.startPause()
-                } label: {
-                    Image(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                        .padding(8)
-                }
-                .tint(Color(.systemGreen))
-                
-                Button {
-                    viewModel.reset()
-                } label: {
-                    Image(systemName: viewModel.isRunning ? "stop.fill" : "arrow.clockwise")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                        .padding(8)
-                }
-                
-                Button(role: .destructive) {
+            
+            TimerControls(
+                viewModel: viewModel,
+                namespace: namespace,
+                configuration: .init(style: .compact),
+                onPlayPause: { viewModel.startPause() },
+                onReset: { viewModel.reset() },
+                onEdit: {
+                    FloatingTimerManager.shared.focusTimer(viewModel.id)
+                    viewModel.requestEditMode()
+                },
+                onDelete: {
                     onDelete?()
                     FloatingTimerManager.shared.closeTimer(viewModel.id)
-                } label: {
-                    Image(systemName: "trash.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                        .padding(8)
-                }.tint(Color(.systemRed))
-            }
-            .controlGroupStyle(.automatic)
-            .transition(.opacity.combined(with: .move(edge: .bottom)))
-            
+                }
+            )
         }
-        .padding(4)
+        .padding(Sizing.xs)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isTitleFocused = false
+        }
     }
 }

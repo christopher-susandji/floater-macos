@@ -17,7 +17,7 @@ struct TimerWindowView: View {
                 TimerView(viewModel: timer)
             } else {
                 Text("Timer not found")
-                    .padding()
+                    .padding(Sizing.lg)
             }
         }
     }

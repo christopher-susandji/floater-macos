@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var seconds: Int = 0
     
     @FocusState private var focusedField: TimeField?
+    @State private var isCreateButtonHovering = false
     
     enum TimeField {
         case title, hours, minutes, seconds
@@ -32,11 +33,17 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .center, spacing: 32) {
-            VStack(alignment: .center, spacing: 32) {
-                VStack(spacing: 8) {
-                    
-                    TextField("TIMER TITLE", text: $title)
+        VStack(alignment: .center, spacing: Sizing.xxl) {
+            VStack(alignment: .center, spacing: Sizing.xxl) {
+                VStack(spacing: Sizing.sm) {
+                    TextField("", text: $title)
+                        .overlay(alignment: .center) {
+                            if title.isEmpty {
+                                Text(Constants.timerTitle)
+                                    .foregroundStyle(.tertiary)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                         .textCase(.uppercase)
                         .font(.system(.headline, design: .default, weight: .heavy))
                         .fontWidth(.expanded)
@@ -98,14 +105,21 @@ struct ContentView: View {
                 .buttonBorderShape(.roundedRectangle)
                 .buttonSizing(.fitted)
                 .controlSize(.large)
-                .tint(.orange)
+                .tint(.accentColor)
                 .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
+                .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
+                .onHover { hovering in
+                    if appViewModel.canCreateTimer && isNotEmpty {
+                        isCreateButtonHovering = hovering
+                    }
+                }
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))
-            .padding(.vertical, 8)
+            .padding(.vertical, Sizing.sm)
             
             if !appViewModel.timerViewModels.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: Sizing.sm) {
                     ForEach(Array(appViewModel.timerViewModels.enumerated()), id: \.offset) { index, viewModel in
                         TimerListCell(viewModel: viewModel, onDelete: { appViewModel.removeTimer(id: viewModel.id) })
                         
@@ -114,12 +128,15 @@ struct ContentView: View {
                         }
                     }
                 }
-                .padding(8)
+                .padding(Sizing.sm)
                 .background(RoundedRectangle(cornerRadius: 12).fill(.thinMaterial))
             }
         }
-        .padding(24)
-        
+        .padding(Sizing.xl)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            NSApp.keyWindow?.makeFirstResponder(nil)
+        }
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
