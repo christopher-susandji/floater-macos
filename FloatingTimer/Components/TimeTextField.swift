@@ -136,7 +136,7 @@ text = "0" + String(newValue.last ?? "0")
 extension TimeTextField {
     
     private var focusBackgroundColor: Color {
-        isFocused ? .orange : .clear
+        isFocused ? .accentColor : .clear
     }
     
     private func incrementValue() {

@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var seconds: Int = 0
     
     @FocusState private var focusedField: TimeField?
+    @State private var isCreateButtonHovering = false
     
     enum TimeField {
         case title, hours, minutes, seconds
@@ -98,8 +99,15 @@ struct ContentView: View {
                 .buttonBorderShape(.roundedRectangle)
                 .buttonSizing(.fitted)
                 .controlSize(.large)
-                .tint(.orange)
+                .tint(.accentColor)
                 .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
+                .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
+                .onHover { hovering in
+                    if appViewModel.canCreateTimer && isNotEmpty {
+                        isCreateButtonHovering = hovering
+                    }
+                }
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))
             .padding(.vertical, 8)
@@ -119,7 +127,10 @@ struct ContentView: View {
             }
         }
         .padding(24)
-        
+        .contentShape(Rectangle())
+        .onTapGesture {
+            NSApp.keyWindow?.makeFirstResponder(nil)
+        }
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
