@@ -11,24 +11,28 @@ struct TimerListCell: View {
     @Bindable var viewModel: TimerViewModel
     var onDelete: (() -> Void)?
     @Namespace private var namespace
-    
     @FocusState private var isTitleFocused: Bool
-    
-    private let characterLimit = 16
     
     var body: some View {
         HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                TextField("UNTITLED", text: $viewModel.title)
+            VStack(alignment: .leading, spacing: Sizing.xxs) {
+                TextField("", text: $viewModel.title)
+                    .overlay(alignment: .leading) {
+                        if viewModel.title.isEmpty {
+                            Text(Constants.untitled)
+                                .foregroundStyle(.secondary)
+                                .allowsHitTesting(false)
+                        }
+                    }
                     .textFieldStyle(.plain)
                     .font(.system(.caption, design: .default))
                     .fontWeight(.medium)
                     .fontWidth(.expanded)
-                    .foregroundStyle(isTitleFocused ? .primary : .secondary)
+                    .foregroundStyle(viewModel.title.count > 0 ? .primary : Color.secondary.opacity(0.5))
                     .focused($isTitleFocused)
                     .onChange(of: viewModel.title) { oldValue, newValue in
-                        if newValue.count > characterLimit {
-                            viewModel.title = String(newValue.prefix(characterLimit))
+                        if newValue.count > Constants.characterLimit {
+                            viewModel.title = String(newValue.prefix(Constants.characterLimit))
                         } else {
                             viewModel.title = newValue.uppercased()
                         }
@@ -45,76 +49,23 @@ struct TimerListCell: View {
             
             Spacer()
             
-            GlassEffectContainer(spacing: 4) {
-                HStack(spacing: 4) {
-                    Button {
-                        viewModel.startPause()
-                    } label: {
-                        Image(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
-                            .fontWeight(.black)
-                            .font(.system(size: 12))
-                            .frame(width: 16, height: 16)
-                            .fixedSize()
-                            .padding(4)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.circle)
-                    .tint(Color.accentColor)
-                    .glassEffectID("playpause", in: namespace)
-                    
-                    if viewModel.timerState != .idle {
-                        Button {
-                            viewModel.reset()
-                        } label: {
-                            Image(systemName: viewModel.timerState != .finished ? "stop.fill" : "arrow.clockwise")
-                                .fontWeight(.black)
-                                .font(.system(size: 12))
-                                .frame(width: 16, height: 16)
-                                .fixedSize()
-                                .padding(4)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.circle)
-                        .glassEffectID("stoprepeat", in: namespace)
-                    }
-                    
-                    if viewModel.timerState == .finished || viewModel.timerState == .idle {
-                        Button {
-                            FloatingTimerManager.shared.focusTimer(viewModel.id)
-                            viewModel.requestEditMode()
-                        } label: {
-                            Image(systemName: "square.and.pencil")
-                                .fontWeight(.black)
-                                .font(.system(size: 12))
-                                .frame(width: 16, height: 16)
-                                .fixedSize()
-                                .padding(4)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.circle)
-                        .glassEffectID("edit", in: namespace)
-                    }
-                    
-                    Button(role: .destructive) {
-                        onDelete?()
-                        FloatingTimerManager.shared.closeTimer(viewModel.id)
-                    } label: {
-                        Image(systemName: "trash.fill")
-                            .fontWeight(.black)
-                            .font(.system(size: 12))
-                            .frame(width: 16, height: 16)
-                            .fixedSize()
-                            .padding(4)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.circle)
-                    .tint(Color(.systemRed))
-                    .glassEffectID("remove", in: namespace)
+            TimerControls(
+                viewModel: viewModel,
+                namespace: namespace,
+                configuration: .init(style: .compact),
+                onPlayPause: { viewModel.startPause() },
+                onReset: { viewModel.reset() },
+                onEdit: {
+                    FloatingTimerManager.shared.focusTimer(viewModel.id)
+                    viewModel.requestEditMode()
+                },
+                onDelete: {
+                    onDelete?()
+                    FloatingTimerManager.shared.closeTimer(viewModel.id)
                 }
-                
-            }
+            )
         }
-        .padding(4)
+        .padding(Sizing.xs)
         .contentShape(Rectangle())
         .onTapGesture {
             isTitleFocused = false

@@ -103,6 +103,7 @@ final class TimerViewModel {
             self.timerState = isRunning ? .running : .paused
         }
         isRunning ? startTicker() : stopTicker()
+        editRequestToken = 0
     }
     
     func reset() {

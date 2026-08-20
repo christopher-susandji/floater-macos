@@ -33,11 +33,17 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .center, spacing: 32) {
-            VStack(alignment: .center, spacing: 32) {
-                VStack(spacing: 8) {
-                    
-                    TextField("TIMER TITLE", text: $title)
+        VStack(alignment: .center, spacing: Sizing.xxl) {
+            VStack(alignment: .center, spacing: Sizing.xxl) {
+                VStack(spacing: Sizing.sm) {
+                    TextField("", text: $title)
+                        .overlay(alignment: .center) {
+                            if title.isEmpty {
+                                Text(Constants.timerTitle)
+                                    .foregroundStyle(.tertiary)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                         .textCase(.uppercase)
                         .font(.system(.headline, design: .default, weight: .heavy))
                         .fontWidth(.expanded)
@@ -110,10 +116,10 @@ struct ContentView: View {
                 }
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))
-            .padding(.vertical, 8)
+            .padding(.vertical, Sizing.sm)
             
             if !appViewModel.timerViewModels.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: Sizing.sm) {
                     ForEach(Array(appViewModel.timerViewModels.enumerated()), id: \.offset) { index, viewModel in
                         TimerListCell(viewModel: viewModel, onDelete: { appViewModel.removeTimer(id: viewModel.id) })
                         
@@ -122,11 +128,11 @@ struct ContentView: View {
                         }
                     }
                 }
-                .padding(8)
+                .padding(Sizing.sm)
                 .background(RoundedRectangle(cornerRadius: 12).fill(.thinMaterial))
             }
         }
-        .padding(24)
+        .padding(Sizing.xl)
         .contentShape(Rectangle())
         .onTapGesture {
             NSApp.keyWindow?.makeFirstResponder(nil)
