@@ -104,7 +104,7 @@ struct TimerControls: View {
                     Button {
                         onEdit()
                     } label: {
-                        icon(systemName: "slider.horizontal.3")
+                        icon(systemName: "pencil")
                     }
                     .if(configuration.style == .regular) { $0.buttonStyle(.bordered).buttonBorderShape(.circle) }
                     .if(configuration.style == .compact) { $0.buttonStyle(.plain) }

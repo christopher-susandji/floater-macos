@@ -140,7 +140,7 @@ struct ContentView: View {
                     }
                 }
                 .padding(Sizing.sm)
-                .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
+                .background(RoundedRectangle(cornerRadius: 12).fill(.thickMaterial))
             }
         }
         .padding(Sizing.xl)
@@ -148,8 +148,6 @@ struct ContentView: View {
         .onTapGesture {
             NSApp.keyWindow?.makeFirstResponder(nil)
         }
-//        .glassEffect(.regular, in: .rect(cornerRadius: 12.0))
-        
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
