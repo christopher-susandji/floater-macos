@@ -13,6 +13,7 @@ struct TimeTextField: View {
     let max: Int
     var onMoveLeft: (() -> Void)? = nil
     var onMoveRight: (() -> Void)? = nil
+    var onEnter: (() -> Void)? = nil
     
     @State private var text: String = ""
     @State private var shouldClearOnNextInput = false
@@ -121,6 +122,11 @@ text = "0" + String(newValue.last ?? "0")
                 default:
                     break
                 }
+                return .handled
+            }
+            .onKeyPress(.return) {
+                guard let onEnter else { return .ignored }
+                onEnter()
                 return .handled
             }
     }

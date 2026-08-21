@@ -35,5 +35,5 @@ enum Constants {
     static let paused = "PAUSED"
     static let pausedIcon = "􀊆"
     static let changeTimerButton = "Change Timer"
-    
+    static let createTimerButton = "Create Timer"
 }

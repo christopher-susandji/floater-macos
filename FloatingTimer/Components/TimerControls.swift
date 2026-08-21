@@ -75,8 +75,7 @@ struct TimerControls: View {
                     } label: {
                         icon(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
                     }
-                    .if(configuration.style == .regular) { $0.buttonStyle(.borderedProminent).buttonBorderShape(.circle)
-                        .tint(.accentColor) }
+                    .if(configuration.style == .regular) { $0.buttonStyle(.borderedProminent).buttonBorderShape(.circle).backgroundStyle(Color.accentColor) }
                     .if(configuration.style == .compact) { $0.buttonStyle(.plain).foregroundStyle(Color.accentColor) }
                     
                     .glassEffectID("playpause", in: namespace)
@@ -105,8 +104,7 @@ struct TimerControls: View {
                     Button {
                         onEdit()
                     } label: {
-                        icon(systemName: "square.and.pencil")
-                            .offset(x: configuration.style == .regular ? 0.5 : 0.2, y: configuration.style == .regular ? -1 : -0.5)
+                        icon(systemName: "slider.horizontal.3")
                     }
                     .if(configuration.style == .regular) { $0.buttonStyle(.bordered).buttonBorderShape(.circle) }
                     .if(configuration.style == .compact) { $0.buttonStyle(.plain) }
@@ -122,20 +120,19 @@ struct TimerControls: View {
                     icon(systemName: "xmark")
                 }
                 .if(configuration.style == .regular) {
-                    $0.buttonStyle(.borderedProminent)
+                    $0.buttonStyle(.bordered)
                         .buttonBorderShape(.circle)
-                        .tint(Color(.systemRed))
                 }
                 .if(configuration.style == .compact) {
                     $0.buttonStyle(.plain)
-                        .foregroundStyle(Color(.systemRed))
                 }
                 .glassEffectID("remove", in: namespace)
             }
             .modifier(OptionalTransition(transition: configuration.transition))
             .if(configuration.style == .compact, transform: {
-                $0.padding(4)
-                    .background(Capsule(style: .circular).fill(.background))
+                $0.padding(2)
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 8))
+//                    .background(RoundedRectangle(cornerRadius: 8, style: .circular).fill(.ultraThinMaterial))
             })
         }
     }
