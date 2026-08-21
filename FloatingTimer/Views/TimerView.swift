@@ -35,7 +35,7 @@ struct TimerView: View {
                 }
             }
             .frame(minWidth: 220, minHeight: 220)
-            .glassEffect(.regular, in: .rect(cornerRadius: 32.0))
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 32.0))
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -51,22 +51,14 @@ struct TimerView: View {
     private var timerContent: some View {
         VStack(spacing: Sizing.sm) {
             VStack(spacing: Sizing.xs) {
-                HStack(spacing: Sizing.xs) {
-                    if viewModel.timerState == .paused {
-                        Text(viewModel.title.count > .zero ? Constants.pausedIcon : Constants.paused)
-                            .foregroundStyle(.tertiary)
-                    }
-                    
-                    // Logic is intentional so that on hover mode, it won't disturb the TimerControls placement
-                    if viewModel.title.count > .zero {
-                        Text(viewModel.title)
-                            .foregroundStyle(.secondary)
-                    }
+                if viewModel.title.count > .zero {
+                    Text(viewModel.title)
+                        .foregroundStyle(.secondary)
+                        .fontWidth(.expanded)
+                        .textCase(.uppercase)
+                        .fontWeight(.semibold)
+                        .font(.caption)
                 }
-                .fontWidth(.expanded)
-                .textCase(.uppercase)
-                .fontWeight(.semibold)
-                .font(.caption)
                 
                 timeDisplay
             }
@@ -93,6 +85,15 @@ struct TimerView: View {
                         }
                     }
                 )
+            } else {
+                if viewModel.timerState == .paused {
+                    Text(Constants.paused)
+                        .foregroundStyle(.tertiary)
+                        .fontWidth(.expanded)
+                        .textCase(.uppercase)
+                        .fontWeight(.semibold)
+                        .font(.caption)
+                }
             }
         }
         .padding(Sizing.lg)

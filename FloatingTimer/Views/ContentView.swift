@@ -32,6 +32,15 @@ struct ContentView: View {
         hours != 0 || minutes != 0 || seconds != 0
     }
     
+    private func createTimer() {
+        if let timer = appViewModel.createTimer(
+            title: title,
+            seconds: totalSeconds
+        ) {
+            FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .center, spacing: Sizing.xxl) {
             VStack(alignment: .center, spacing: Sizing.xxl) {
@@ -57,13 +66,18 @@ struct ContentView: View {
                                 title = newValue.uppercased()
                             }
                         }
+                        .onKeyPress(.return) {
+                            focusedField = .minutes
+                            return .handled
+                        }
                     
                     HStack(alignment: .center, spacing: 0) {
                         // HOURS FIELD
                         TimeTextField(
                             value: $hours,
                             max: 23,
-                            onMoveRight: { focusedField = .minutes }
+                            onMoveRight: { focusedField = .minutes },
+                            onEnter: { createTimer() }
                         )
                         .focused($focusedField, equals: .hours)
                         
@@ -76,7 +90,8 @@ struct ContentView: View {
                         TimeTextField(
                             value: $minutes, max: 59,
                             onMoveLeft: { focusedField = .hours },
-                            onMoveRight: { focusedField = .seconds }
+                            onMoveRight: { focusedField = .seconds },
+                            onEnter: { createTimer() }
                         ).focused($focusedField, equals: .minutes)
                         
                         // SEPARATOR
@@ -86,19 +101,15 @@ struct ContentView: View {
                         
                         TimeTextField(
                             value: $seconds, max: 59,
-                            onMoveLeft: { focusedField = .minutes }
+                            onMoveLeft: { focusedField = .minutes },
+                            onEnter: { createTimer() }
                         )
                         .focused($focusedField, equals: .seconds)
                     }
                 }
                 
-                Button("Create Timer") {
-                    if let timer = appViewModel.createTimer(
-                        title: title,
-                        seconds: totalSeconds
-                    ) {
-                        FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
-                    }
+                Button(Constants.createTimerButton) {
+                    createTimer()
                 }
                 .fontWidth(.expanded)
                 .buttonStyle(.glass)
@@ -129,7 +140,7 @@ struct ContentView: View {
                     }
                 }
                 .padding(Sizing.sm)
-                .background(RoundedRectangle(cornerRadius: 12).fill(.thinMaterial))
+                .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
             }
         }
         .padding(Sizing.xl)
@@ -137,6 +148,8 @@ struct ContentView: View {
         .onTapGesture {
             NSApp.keyWindow?.makeFirstResponder(nil)
         }
+//        .glassEffect(.regular, in: .rect(cornerRadius: 12.0))
+        
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
