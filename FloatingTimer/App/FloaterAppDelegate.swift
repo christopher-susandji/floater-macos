@@ -10,10 +10,12 @@ import AppKit
 class FloaterAppDelegate: NSResponder, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
-        
-        // Hide menu items we don't want the user to have access to
-        [1, 2, 4] // 1 = File, 2 = Edit, 4 = Help
-            .compactMap { NSApp.mainMenu?.item(at: $0) }
-            .forEach { $0.isHidden = true }
+
+        let hiddenIndexes = [1, 2, 4] // 1 = File, 2 = Edit, 4 = Help
+        if let items = NSApp.mainMenu?.items {
+            hiddenIndexes
+                .compactMap { items.indices.contains($0) ? items[$0] : nil }
+                .forEach { $0.isHidden = true }
+        }
     }
 }

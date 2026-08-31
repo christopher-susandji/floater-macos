@@ -17,6 +17,7 @@ struct ContentView: View {
     
     @FocusState private var focusedField: TimeField?
     @State private var isCreateButtonHovering = false
+    @State private var selectedType: TimerType = .classicDefault
     
     enum TimeField {
         case title, hours, minutes, seconds
@@ -35,9 +36,90 @@ struct ContentView: View {
     private func createTimer() {
         if let timer = appViewModel.createTimer(
             title: title,
-            seconds: totalSeconds
+            seconds: totalSeconds,
+            type: selectedType
         ) {
             FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
+        }
+    }
+
+    @ViewBuilder
+    private var themePicker: some View {
+        HStack(spacing: Sizing.sm) {
+            Menu {
+                ForEach(TypeCatalog.all, id: \.self) { type in
+                    Button(type.name) {
+                        selectedType = type
+                    }
+                }
+            } label: {
+                HStack(spacing: Sizing.xs) {
+                    Image(systemName: "paintbrush.pointed.fill")
+                    Text(selectedType.name)
+                }
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(selectedAccent)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+
+            themeSwatches
+        }
+    }
+
+    @ViewBuilder
+    private var themeSwatches: some View {
+        switch selectedType {
+        case .classic:
+            swatchPicker(for: selectedType)
+        case .vintage:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func swatchPicker(for type: TimerType) -> some View {
+        HStack(spacing: Sizing.xs) {
+            ForEach(ThemeCatalog.classicPresets) { theme in
+                Button {
+                    selectedType = Self.withTheme(theme, for: type)
+                } label: {
+                    Circle()
+                        .fill(theme.palette.accent.color)
+                        .frame(width: 12, height: 12)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(
+                                    isSelected(theme) ? Color.white : Color.white.opacity(0.25),
+                                    lineWidth: isSelected(theme) ? 2 : 1
+                                )
+                        }
+                }
+                .buttonStyle(.plain)
+                .help(theme.name)
+            }
+        }
+    }
+
+    private static func withTheme(_ theme: ClassicTheme, for type: TimerType) -> TimerType {
+        switch type {
+        case .classic: return .classic(theme: theme)
+        case .vintage: return type
+        }
+    }
+
+    private var selectedAccent: Color {
+        switch selectedType {
+        case .classic(let theme): return theme.palette.accent.color
+        case .vintage(let theme): return theme.palette.accent.color
+        }
+    }
+
+    private func isSelected(_ theme: ClassicTheme) -> Bool {
+        switch selectedType {
+        case .classic(let current): return current == theme
+        case .vintage: return false
         }
     }
     
@@ -108,22 +190,26 @@ struct ContentView: View {
                     }
                 }
                 
-                Button(Constants.createTimerButton) {
-                    createTimer()
-                }
-                .fontWidth(.expanded)
-                .buttonStyle(.glass)
-                .buttonBorderShape(.roundedRectangle)
-                .buttonSizing(.fitted)
-                .controlSize(.large)
-                .tint(.accentColor)
-                .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
-                .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
-                .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
-                .onHover { hovering in
-                    if appViewModel.canCreateTimer && isNotEmpty {
-                        isCreateButtonHovering = hovering
+                VStack(spacing: Sizing.sm) {
+                    Button(Constants.createTimerButton) {
+                        createTimer()
                     }
+                    .fontWidth(.expanded)
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.roundedRectangle)
+                    .buttonSizing(.fitted)
+                    .controlSize(.large)
+                    .tint(selectedAccent)
+                    .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
+                    .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
+                    .onHover { hovering in
+                        if appViewModel.canCreateTimer && isNotEmpty {
+                            isCreateButtonHovering = hovering
+                        }
+                    }
+
+                    themePicker
                 }
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))
