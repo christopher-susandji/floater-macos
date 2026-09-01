@@ -7,8 +7,14 @@
 
 import SwiftUI
 
+struct TickRingTheme {
+    let ringBase: Color
+    let ringActive: Color
+}
+
 struct TickRingView: View {
     var remaining: TimeInterval
+    var theme: TickRingTheme
     var tickCount: Int = 60
     
     var body: some View {
@@ -34,8 +40,7 @@ struct TickRingView: View {
                     let pInner = roundedRectPoint(at: t, in: innerRect, cornerRadius: innerRadius)
                     
                     let tickPhase = Double(i) / Double(max(1, tickCount))
-                    let opacity = tickOpacity(for: tickPhase)
-                    let tickColor = Color.primary.opacity(opacity)
+                    let tickColor = color(for: tickPhase)
                     Path { p in
                         p.move(to: pOuter)
                         p.addLine(to: pInner)
@@ -49,6 +54,49 @@ struct TickRingView: View {
             .frame(width: size, height: size)
             .animation(.linear(duration: 0.2), value: remaining)
         }
+    }
+    
+    private func color(for tickPhase: Double) -> Color {
+        let baseOpacity = 0.10
+        if remaining <= 0 {
+            return theme.ringBase.opacity(baseOpacity)
+        }
+        
+        // Trail behind head (comet tail)
+        let dToHead = wrappedDistanceForward(from: tickPhase, to: headPhase)
+        let trailLength = 1.0
+        var trail = max(0, 1 - dToHead / trailLength)
+        let isLastMinute = remaining < 60
+        if isLastMinute && tickPhase > headPhase {
+            trail = 0
+        }
+        let trailOpacity = pow(trail, 1.8) * 0.85
+        
+        // Pre-landing pulse on the NEXT tick (head will land there next)
+        let nextTickIndex = (Int(floor(headPhase * Double(tickCount))) + 1) % tickCount
+        let nextTickPhase = Double(nextTickIndex) / Double(tickCount)
+        let approach = fractionalTickPhase
+        let isNextTick = abs(tickPhase - nextTickPhase) < (0.5 / Double(tickCount))
+        let landingPulse = isNextTick ? pow(approach, 1.2) : 0
+        
+        // Head glow on current head-neighborhood for continuity
+        let dFromHead = min(
+            wrappedDistanceForward(from: tickPhase, to: headPhase),
+            wrappedDistanceForward(from: headPhase, to: tickPhase)
+        )
+        let headGlow = max(0, 1 - dFromHead / 0.03) * 0.6
+        
+        let activeOpacity = min(1.0, trailOpacity + landingPulse + headGlow)
+        
+        // When base and active share the same color, blend additively to match
+        // the original rendering exactly.
+        if theme.ringBase == theme.ringActive {
+            return theme.ringBase.opacity(min(1.0, baseOpacity + activeOpacity))
+        }
+        
+        return activeOpacity > baseOpacity
+            ? theme.ringActive.opacity(activeOpacity)
+            : theme.ringBase.opacity(baseOpacity)
     }
 }
 
@@ -150,40 +198,5 @@ private extension TickRingView {
         // clockwise/forward distance on [0,1)
         let d = b - a
         return d >= 0 ? d : d + 1
-    }
-    
-    func tickOpacity(for tickPhase: Double) -> Double {
-        // Base opacity for inactive background ticks
-        let base = 0.10
-        if remaining <= 0 { return 0.1 }
-        
-        // Trail behind head (comet tail)
-        // "Behind" means from tick -> head in forward direction is small.
-        let dToHead = wrappedDistanceForward(from: tickPhase, to: headPhase)
-        let trailLength = 1.0 // portion of ring used for trail
-        var trail = max(0, 1 - dToHead / trailLength)
-        let isLastMinute = remaining < 60
-        if isLastMinute && tickPhase > headPhase {
-            trail = 0
-        }
-        let trailOpacity = pow(trail, 1.8) * 0.85
-        
-        // Pre-landing pulse on the NEXT tick (head will land there next)
-        let nextTickIndex = (Int(floor(headPhase * Double(tickCount))) + 1) % tickCount
-        let nextTickPhase = Double(nextTickIndex) / Double(tickCount)
-        
-        // Strong pulse from 0 -> 1 as head approaches next tick
-        let approach = fractionalTickPhase // 0 at current tick, 1 before landing next
-        let isNextTick = abs(tickPhase - nextTickPhase) < (0.5 / Double(tickCount))
-        let landingPulse = isNextTick ? pow(approach, 1.2) : 0
-        
-        // Head glow on current head-neighborhood for continuity
-        let dFromHead = min(
-            wrappedDistanceForward(from: tickPhase, to: headPhase),
-            wrappedDistanceForward(from: headPhase, to: tickPhase)
-        )
-        let headGlow = max(0, 1 - dFromHead / 0.03) * 0.6
-        
-        return min(1.0, base + trailOpacity + landingPulse + headGlow)
     }
 }

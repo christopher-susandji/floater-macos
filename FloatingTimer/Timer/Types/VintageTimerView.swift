@@ -1,32 +1,42 @@
 //
-//  TimerView.swift
+//  VintageTimerView.swift
 //  FloatingTimer
 //
-//  Created by Christopher Susandji on 27/07/26.
+//  Created by Christopher Susandji on 28/08/26.
 //
 
 import SwiftUI
 
-struct TimerView: View {
-    @State private var viewModel: TimerViewModel
+/// The `vintage` timer variant: like `classic`, but the countdown is rendered
+/// as a 5×8 dot-matrix display. Fully driven by its `ClassicTheme`.
+struct VintageTimerView: TimerContentView {
     @State private var isHovered = false
     @State private var editMode = false
     @State private var isResetButtonHovered = false
     @Namespace private var namespace
     
-    let minutes: [TimeInterval] = [60, 120, 180, 300, 600, 900, 1800, 3600]
-    let columnLayout = Array(repeating: GridItem(), count: 2)
+    var viewModel: TimerViewModel
     var onDelete: (() -> Void)?
     
     init(viewModel: TimerViewModel, onDelete: (() -> Void)? = nil) {
-        self._viewModel = State(initialValue: viewModel)
+        self.viewModel = viewModel
         self.onDelete = onDelete
     }
+    
+    private var theme: VintageTheme {
+        if case .vintage(let theme) = viewModel.type { return theme }
+        return .standard
+    }
+    
+    let minutes: [TimeInterval] = [60, 120, 180, 300, 600, 900, 1800, 3600]
+    let columnLayout = Array(repeating: GridItem(), count: 2)
     
     var body: some View {
         Group {
             ZStack(alignment: .center) {
-                TickRingView(remaining: viewModel.remaining)
+                Image("VintageTimerBg")
+                
+                TickRingView(remaining: viewModel.remaining, theme: .init(ringBase: FloaterColor.gold, ringActive: FloaterColor.gold))
                 
                 if !editMode {
                     timerContent
@@ -36,6 +46,7 @@ struct TimerView: View {
             }
             .frame(minWidth: 220, minHeight: 220)
             .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 32.0))
+            .animation(.easeInOut, value: viewModel.timerState)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -53,48 +64,52 @@ struct TimerView: View {
             VStack(spacing: Sizing.xs) {
                 if viewModel.title.count > .zero {
                     Text(viewModel.title)
-                        .foregroundStyle(.secondary)
-                        .fontWidth(.expanded)
+                        .foregroundStyle(FloaterColor.gold)
+                        .fontWidth(.compressed)
                         .textCase(.uppercase)
-                        .fontWeight(.semibold)
-                        .font(.caption)
+                        .kerning(2)
+                        .font(.system(size: 16, weight: .light, design: .default))
                 }
                 
                 timeDisplay
             }
             
-            if isHovered {
-                TimerControls(
-                    viewModel: viewModel,
-                    namespace: namespace,
-                    configuration: .init(
+            TimerControls(
+                viewModel: viewModel,
+                namespace: namespace,
+configuration: .init(
                         transition: .opacity.combined(with: .move(edge: .bottom)),
-                        topPadding: Sizing.sm
+                        topPadding: Sizing.sm,
+                        themed: true,
+                        accentColor: viewModel.accentColor,
+                        prominentButton: .init(
+                            backgroundColor: FloaterColor.vintageBrown,
+                            foregroundColor: FloaterColor.vintageDarkBrown,
+                            borderColor: theme.palette.accent.color,
+                            borderWidth: 2
+                        ),
+                        secondaryButton: .init(
+                            backgroundColor: theme.controls.background,
+                            foregroundColor: theme.controls.foreground,
+                            borderColor: theme.controls.border,
+                            borderWidth: 2
+                        ),
+                        buttonShadow: true
                     ),
-                    onPlayPause: { viewModel.startPause() },
-                    onReset: { viewModel.reset() },
-                    onEdit: {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            editMode.toggle()
-                        }
-                    },
-                    onDelete: { onDelete?() },
-                    onResetHover: { hovering in
-                        if !viewModel.isRunning {
-                            isResetButtonHovered = hovering
-                        }
+                onPlayPause: { viewModel.startPause() },
+                onReset: { viewModel.reset() },
+                onEdit: {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        editMode.toggle()
                     }
-                )
-            } else {
-                if viewModel.timerState == .paused {
-                    Text(Constants.paused)
-                        .foregroundStyle(.tertiary)
-                        .fontWidth(.expanded)
-                        .textCase(.uppercase)
-                        .fontWeight(.semibold)
-                        .font(.caption)
+                },
+                onDelete: { onDelete?() },
+                onResetHover: { hovering in
+                    if !viewModel.isRunning {
+                        isResetButtonHovered = hovering
+                    }
                 }
-            }
+            )
         }
         .padding(Sizing.lg)
     }
@@ -102,22 +117,20 @@ struct TimerView: View {
     private var timeDisplay: some View {
         Group {
             if isResetButtonHovered {
-                Text(viewModel.durationTimeText)
-                    .foregroundStyle(.primary)
+                DotMatrixTimeView(
+                    text: viewModel.durationTimeText,
+                    color: FloaterColor.gold
+                )
             } else {
-                Text(viewModel.timeText)
-                    .contentTransition(.numericText(countsDown: true))
-                    .foregroundStyle(viewModel.timerState == .paused ? .secondary : .primary)
-                    .geometryGroup()
-                    .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
+                DotMatrixTimeView(
+                    text: viewModel.timeText,
+                    color: FloaterColor.gold
+                )
+                .geometryGroup()
+                .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
             }
         }
-        .font(.system(size: 42, weight: .bold, design: .monospaced))
-        .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: 140)
+        .frame(width: 140, height: 56)
         .transition(.opacity)
     }
     
@@ -129,6 +142,7 @@ struct TimerView: View {
                     .font(.caption)
                     .fontWeight(.medium)
                     .fontWidth(.expanded)
+                    .foregroundStyle(theme.palette.textSecondary)
                 Spacer()
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) {
@@ -164,6 +178,6 @@ struct TimerView: View {
 }
 
 #Preview {
-    TimerView(viewModel: TimerViewModel(model: TimerModel(title: "Focus", duration: 5)))
+    VintageTimerView(viewModel: TimerViewModel(model: TimerModel(title: "Focus", duration: 5, type: .vintageDefault)))
         .frame(width: 220, height: 220)
 }

@@ -20,7 +20,7 @@ struct TimerListCell: View {
                     .overlay(alignment: .leading) {
                         if viewModel.title.isEmpty {
                             Text(Constants.untitled)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(viewModel.textSecondary)
                                 .allowsHitTesting(false)
                         }
                     }
@@ -28,7 +28,7 @@ struct TimerListCell: View {
                     .font(.system(.caption, design: .default))
                     .fontWeight(.medium)
                     .fontWidth(.expanded)
-                    .foregroundStyle(viewModel.title.count > 0 ? .primary : Color.secondary.opacity(0.5))
+                    .foregroundStyle(viewModel.title.count > 0 ? viewModel.textPrimary : viewModel.textSecondary.opacity(0.5))
                     .focused($isTitleFocused)
                     .onChange(of: viewModel.title) { oldValue, newValue in
                         if newValue.count > Constants.characterLimit {
@@ -42,7 +42,7 @@ struct TimerListCell: View {
                     .contentTransition(.numericText(countsDown: true))
                     .font(.system(.title, design: .monospaced))
                     .monospacedDigit()
-                    .foregroundStyle(viewModel.isRunning ? .primary : .secondary)
+                    .foregroundStyle(viewModel.isRunning ? viewModel.textPrimary : viewModel.textSecondary)
                     .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
                     .transition(.opacity)
             }
@@ -52,7 +52,7 @@ struct TimerListCell: View {
             TimerControls(
                 viewModel: viewModel,
                 namespace: namespace,
-                configuration: .init(style: .compact),
+                configuration: .init(style: .compact, accentColor: viewModel.accentColor),
                 onPlayPause: { viewModel.startPause() },
                 onReset: { viewModel.reset() },
                 onEdit: {
