@@ -88,6 +88,7 @@ struct TimerControls: View {
                         onPlayPause()
                     } label: {
                         icon(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
+                            .foregroundStyle(configuration.prominentButton.foregroundColor ?? .white)
                     }
                     .if(configuration.style == .regular) {
                         $0.modifier(ProminentButtonStyle(configuration: configuration))
@@ -200,10 +201,12 @@ private struct ProminentButtonStyle: ViewModifier {
                     .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
                     .allowsHitTesting(false)
                 }
+                .modifier(ButtonShadowModifier(isEnabled: configuration.buttonShadow))
         } else {
             content
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.circle)
+                .modifier(ButtonShadowModifier(isEnabled: configuration.buttonShadow))
         }
     }
 }
@@ -232,10 +235,26 @@ private struct SecondaryButtonStyle: ViewModifier {
                     }
                     .allowsHitTesting(false)
                 }
+                .modifier(ButtonShadowModifier(isEnabled: configuration.buttonShadow))
         } else {
             content
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
+                .modifier(ButtonShadowModifier(isEnabled: configuration.buttonShadow))
+        }
+    }
+}
+
+/// Applies a drop shadow to a control button when enabled.
+private struct ButtonShadowModifier: ViewModifier {
+    var isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+        } else {
+            content
         }
     }
 }

@@ -83,14 +83,18 @@ configuration: .init(
                         themed: true,
                         accentColor: viewModel.accentColor,
                         prominentButton: .init(
-                            backgroundColor: theme.palette.accent.color
+                            backgroundColor: FloaterColor.vintageBrown,
+                            foregroundColor: FloaterColor.vintageDarkBrown,
+                            borderColor: theme.palette.accent.color,
+                            borderWidth: 2
                         ),
                         secondaryButton: .init(
                             backgroundColor: theme.controls.background,
                             foregroundColor: theme.controls.foreground,
                             borderColor: theme.controls.border,
-                            borderWidth: 1
-                        )
+                            borderWidth: 2
+                        ),
+                        buttonShadow: true
                     ),
                 onPlayPause: { viewModel.startPause() },
                 onReset: { viewModel.reset() },
