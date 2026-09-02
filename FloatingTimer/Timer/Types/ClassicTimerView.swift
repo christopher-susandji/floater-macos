@@ -80,7 +80,8 @@ struct ClassicTimerView: TimerContentView {
                     namespace: namespace,
                     configuration: .init(
                         transition: .opacity.combined(with: .move(edge: .bottom)),
-                        topPadding: Sizing.sm
+                        topPadding: Sizing.sm,
+                        accentColor: theme.palette.accent.color
                     ),
                     onPlayPause: { viewModel.startPause() },
                     onReset: { viewModel.reset() },

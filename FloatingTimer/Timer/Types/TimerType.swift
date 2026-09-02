@@ -21,7 +21,7 @@ enum TimerType: Hashable {
     var name: String {
         switch self {
         case .classic: return "Classic"
-        case .vintage: return "Vintage"
+        case .vintage: return "Expedition"
         }
     }
 
