@@ -26,6 +26,8 @@ final class TimerEngine {
 
     private(set) var duration: TimeInterval
 
+    private(set) var chimeResourceName: String
+
     let chimeOffset: Double = 0.0
 
     @ObservationIgnored
@@ -37,8 +39,9 @@ final class TimerEngine {
     @ObservationIgnored
     private var hasPlayedWarningChime = false
 
-    init(duration: TimeInterval) {
+    init(duration: TimeInterval, chimeResourceName: String) {
         self.duration = duration
+        self.chimeResourceName = chimeResourceName
         self.remaining = duration
     }
 
@@ -92,6 +95,10 @@ final class TimerEngine {
         remaining = duration
     }
 
+    func setChime(_ resourceName: String) {
+        chimeResourceName = resourceName
+    }
+
     /// Applies a new duration (from editing) and restarts from idle.
     func update(duration: TimeInterval) {
         self.duration = duration
@@ -122,7 +129,7 @@ final class TimerEngine {
     }
 
     private func playCompletionChime() {
-        guard let url = Bundle.main.url(forResource: "minimal-cinematic", withExtension: "mp3") else {
+        guard let url = Bundle.main.url(forResource: chimeResourceName, withExtension: "mp3") else {
             return
         }
         do {

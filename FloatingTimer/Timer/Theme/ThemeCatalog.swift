@@ -15,6 +15,11 @@ enum ThemeCatalog {
         .ocean,
         .ember,
     ]
+
+    /// Presets for the `vintage` timer type, shown in the theme picker.
+    static let vintagePresets: [VintageTheme] = [
+        .standard,
+    ]
 }
 
 extension ClassicTheme {

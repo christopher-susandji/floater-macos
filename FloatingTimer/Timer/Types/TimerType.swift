@@ -45,6 +45,14 @@ enum TimerType: Hashable {
         case .vintage(let theme): return theme.palette.textSecondary
         }
     }
+
+    /// The bundled sound used as this type's completion chime.
+    var chimeResourceName: String {
+        switch self {
+        case .classic: return "minimal-cinematic"
+        case .vintage: return "train-horn"
+        }
+    }
 }
 
 /// The list of available timer types (each paired with its default theme).
@@ -53,4 +61,15 @@ enum TypeCatalog {
         .classicDefault,
         .vintageDefault,
     ]
+}
+
+extension TimerType {
+    /// Whether two timer types are the same family (classic/vintage),
+    /// ignoring the theme each one carries.
+    func isSameKind(as other: TimerType) -> Bool {
+        switch (self, other) {
+        case (.classic, .classic), (.vintage, .vintage): return true
+        default: return false
+        }
+    }
 }
