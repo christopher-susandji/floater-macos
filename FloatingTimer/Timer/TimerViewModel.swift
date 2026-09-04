@@ -26,7 +26,7 @@ final class TimerViewModel {
 
     init(model: TimerModel) {
         self.model = model
-        self.engine = TimerEngine(duration: model.duration, chimeResourceName: model.type.chimeResourceName)
+        self.engine = TimerEngine(duration: model.duration, chimeFileName: model.chime)
     }
 
     var id: UUID { model.id }
@@ -39,6 +39,8 @@ final class TimerViewModel {
     var duration: TimeInterval { model.duration }
 
     var type: TimerType { model.type }
+
+    var chime: String { model.chime }
 
     var accentColor: Color { type.accentColor }
     var textPrimary: Color { type.textPrimaryColor }
@@ -88,6 +90,18 @@ final class TimerViewModel {
         }
     }
 
+    /// The completion chimes shown in the edit-mode picker.
+    var chimeOptions: [ChimeOption] {
+        ChimeCatalog.all.map { option in
+            ChimeOption(
+                id: option.id,
+                name: option.name,
+                isSelected: option.id == model.chime,
+                onSelect: { self.updateChime(option.id) }
+            )
+        }
+    }
+
     // - MARK: Engine state (forwarded for Observation tracking)
 
     var remaining: TimeInterval { engine.remaining }
@@ -99,14 +113,22 @@ final class TimerViewModel {
     var initialTimeText: String { engine.initialTimeText }
 
     func updateTimer(time: TimeInterval) {
-        model = .init(id: model.id, title: model.title, duration: time, type: model.type)
+        model = .init(id: model.id, title: model.title, duration: time, type: model.type, chime: model.chime)
         engine.update(duration: time)
     }
 
     /// Swaps the timer's theme/type without touching its title or duration.
+    /// The completion chime follows the new type's default (Classic →
+    /// minimal-cinematic, Expedition → train-horn).
     func updateType(_ type: TimerType) {
-        model = .init(id: model.id, title: model.title, duration: model.duration, type: type)
-        engine.setChime(type.chimeResourceName)
+        model = .init(id: model.id, title: model.title, duration: model.duration, type: type, chime: type.defaultChimeFileName)
+        engine.setChime(type.defaultChimeFileName)
+    }
+
+    /// Changes the completion chime without touching the type, title or duration.
+    func updateChime(_ chime: String) {
+        model = .init(id: model.id, title: model.title, duration: model.duration, type: model.type, chime: chime)
+        engine.setChime(chime)
     }
 
     /// Requests that this timer's floating panel open its preset-editing screen.

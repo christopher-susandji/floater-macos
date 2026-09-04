@@ -26,7 +26,7 @@ final class TimerEngine {
 
     private(set) var duration: TimeInterval
 
-    private(set) var chimeResourceName: String
+    private(set) var chimeFileName: String
 
     let chimeOffset: Double = 0.0
 
@@ -39,9 +39,9 @@ final class TimerEngine {
     @ObservationIgnored
     private var hasPlayedWarningChime = false
 
-    init(duration: TimeInterval, chimeResourceName: String) {
+    init(duration: TimeInterval, chimeFileName: String) {
         self.duration = duration
-        self.chimeResourceName = chimeResourceName
+        self.chimeFileName = chimeFileName
         self.remaining = duration
     }
 
@@ -95,8 +95,8 @@ final class TimerEngine {
         remaining = duration
     }
 
-    func setChime(_ resourceName: String) {
-        chimeResourceName = resourceName
+    func setChime(_ fileName: String) {
+        chimeFileName = fileName
     }
 
     /// Applies a new duration (from editing) and restarts from idle.
@@ -129,7 +129,7 @@ final class TimerEngine {
     }
 
     private func playCompletionChime() {
-        guard let url = Bundle.main.url(forResource: chimeResourceName, withExtension: "mp3") else {
+        guard let url = url(forChime: chimeFileName) else {
             return
         }
         do {
@@ -140,6 +140,25 @@ final class TimerEngine {
                 sound.play()
             }
         }
+    }
+
+    /// Resolves a chime identifier to a playable audio URL. Identifiers may be:
+    /// - a full file path (user-uploaded audio),
+    /// - a bundled resource file name such as "minimal-cinematic.mp3".
+    private func url(forChime chime: String) -> URL? {
+        if chime.hasPrefix("/") {
+            return URL(fileURLWithPath: chime)
+        }
+
+        let name = (chime as NSString).deletingPathExtension
+        let ext = (chime as NSString).pathExtension
+        let resource = Bundle.main.url(forResource: name, withExtension: ext)
+        if resource != nil { return resource }
+
+        // Fall back to any bundled resource matching the base name.
+        let anyExtension = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: nil)?
+            .first { $0.deletingPathExtension().lastPathComponent == name }
+        return anyExtension
     }
 
     private func stopTicker() {

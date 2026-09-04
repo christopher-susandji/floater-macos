@@ -49,6 +49,7 @@ struct TimerView: View {
             headerColor: viewModel.textSecondary,
             typeOptions: viewModel.typeOptions,
             themeOptions: viewModel.themeOptions,
+            chimeOptions: viewModel.chimeOptions,
             minutes: minutes,
             presetAction: { time in
                 toggleEdit()

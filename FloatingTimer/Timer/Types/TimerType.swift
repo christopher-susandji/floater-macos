@@ -46,11 +46,11 @@ enum TimerType: Hashable {
         }
     }
 
-    /// The bundled sound used as this type's completion chime.
-    var chimeResourceName: String {
+    /// The bundled sound used as this type's default completion chime.
+    var defaultChimeFileName: String {
         switch self {
-        case .classic: return "minimal-cinematic"
-        case .vintage: return "train-horn"
+        case .classic: return "minimal-cinematic.mp3"
+        case .vintage: return "train-horn.mp3"
         }
     }
 }
