@@ -11,8 +11,12 @@ import SwiftUI
 @MainActor
 @Observable
 final class AppViewModel {
-    static let maxTimerCount = 5
-    
+    nonisolated static let maxTimerCount = 5
+
+    /// The single instance shared by the UI and App Intents, so a timer started
+    /// via Siri/Spotlight appears in the same window as one started by hand.
+    static let shared = AppViewModel()
+
     var timerViewModels: [TimerViewModel] = []
     
     var canCreateTimer: Bool {

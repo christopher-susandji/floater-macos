@@ -11,5 +11,5 @@ import SwiftUI
 /// the same `TimerViewModel` and exposes the same delete hook, so the
 /// dispatcher and the manager can treat all timer types uniformly.
 protocol TimerContentView: View {
-    init(viewModel: TimerViewModel, onDelete: (() -> Void)?)
+    init(viewModel: TimerViewModel, onDelete: (() -> Void)?, onEdit: (() -> Void)?)
 }

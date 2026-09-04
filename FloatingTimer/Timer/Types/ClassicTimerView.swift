@@ -7,20 +7,21 @@
 
 import SwiftUI
 
-/// The `classic` timer variant: rounded glass panel with tick ring, hover
-/// controls and preset editing. Fully driven by its `ClassicTheme`.
+/// The `classic` timer variant: rounded glass panel with tick ring and hover
+/// controls. Edit mode lives in `TimerView`. Fully driven by its `ClassicTheme`.
 struct ClassicTimerView: TimerContentView {
     @State private var isHovered = false
-    @State private var editMode = false
     @State private var isResetButtonHovered = false
     @Namespace private var namespace
 
     var viewModel: TimerViewModel
     var onDelete: (() -> Void)?
+    var onEdit: (() -> Void)?
 
-    init(viewModel: TimerViewModel, onDelete: (() -> Void)? = nil) {
+    init(viewModel: TimerViewModel, onDelete: (() -> Void)? = nil, onEdit: (() -> Void)? = nil) {
         self.viewModel = viewModel
         self.onDelete = onDelete
+        self.onEdit = onEdit
     }
 
     private var theme: ClassicTheme {
@@ -28,35 +29,21 @@ struct ClassicTimerView: TimerContentView {
         return .standard
     }
 
-    let minutes: [TimeInterval] = [60, 120, 180, 300, 600, 900, 1800, 3600]
-    let columnLayout = Array(repeating: GridItem(), count: 2)
-
     var body: some View {
-        Group {
-            ZStack(alignment: .center) {
-                TickRingView(remaining: viewModel.remaining, theme: .init(
-                    ringBase: theme.palette.ringBase,
-                    ringActive: theme.palette.ringActive))
+        ZStack(alignment: .center) {
+            TickRingView(remaining: viewModel.remaining, theme: .init(
+                ringBase: theme.palette.ringBase,
+                ringActive: theme.palette.ringActive))
 
-                if !editMode {
-                    timerContent
-                } else {
-                    editModeContent
-                }
-            }
-            .frame(minWidth: 220, minHeight: 220)
-            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 32.0))
-            .animation(.easeInOut, value: viewModel.timerState)
-            .onHover { hovering in
-                isHovered = hovering
-            }
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
-            .onChange(of: viewModel.editRequestToken) { _, newValue in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    editMode = newValue > 0
-                }
-            }
+            timerContent
         }
+        .frame(minWidth: 220, minHeight: 220)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 32.0))
+        .animation(.easeInOut, value: viewModel.timerState)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 
     private var timerContent: some View {
@@ -80,15 +67,12 @@ struct ClassicTimerView: TimerContentView {
                     namespace: namespace,
                     configuration: .init(
                         transition: .opacity.combined(with: .move(edge: .bottom)),
-                        topPadding: Sizing.sm
+                        topPadding: Sizing.sm,
+                        accentColor: theme.palette.accent.color
                     ),
                     onPlayPause: { viewModel.startPause() },
                     onReset: { viewModel.reset() },
-                    onEdit: {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            editMode.toggle()
-                        }
-                    },
+                    onEdit: { onEdit?() },
                     onDelete: { onDelete?() },
                     onResetHover: { hovering in
                         if !viewModel.isRunning {
@@ -135,48 +119,6 @@ struct ClassicTimerView: TimerContentView {
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: 140)
         .transition(.opacity)
-    }
-
-    private var editModeContent: some View {
-        VStack {
-            HStack(alignment: .center) {
-                Text(Constants.changeTimerButton)
-                    .textCase(.uppercase)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .fontWidth(.expanded)
-                    .foregroundStyle(theme.palette.textSecondary)
-                Spacer()
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        editMode.toggle()
-                    }
-                } label: {
-                    Image(systemName: "xmark")
-                        .fontWeight(.bold)
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.roundedRectangle)
-                .padding(.bottom, Sizing.sm)
-            }
-
-            ScrollView(.vertical) {
-                LazyVGrid(columns: columnLayout, pinnedViews: [.sectionHeaders]) {
-                    ForEach(minutes, id: \.description) { preset in
-                        TimerPresetCell(preset) { time in
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                editMode.toggle()
-                            }
-                            viewModel.updateTimer(time: time)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .cornerRadius(4)
-            }
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-        }
-        .frame(width: 160, height: 160)
     }
 }
 

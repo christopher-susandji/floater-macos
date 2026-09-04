@@ -42,6 +42,95 @@ struct ContentView: View {
             FloatingTimerManager.shared.showTimer(timer, in: appViewModel)
         }
     }
+    
+    @ViewBuilder
+    private var timerTitleField: some View {
+        TextField("", text: $title)
+            .overlay(alignment: .center) {
+                if title.isEmpty {
+                    Text(Constants.timerTitle)
+                        .foregroundStyle(.tertiary)
+                        .allowsHitTesting(false)
+                }
+            }
+            .textCase(.uppercase)
+            .font(.system(.headline, design: .default, weight: .heavy))
+            .fontWidth(.expanded)
+            .multilineTextAlignment(.center)
+            .textFieldStyle(.plain)
+            .focused($focusedField, equals: .title)
+            .onChange(of: title) { oldValue, newValue in
+                if newValue.count > characterLimit {
+                    title = String(newValue.prefix(characterLimit))
+                } else {
+                    title = newValue.uppercased()
+                }
+            }
+            .onKeyPress(.return) {
+                focusedField = .minutes
+                return .handled
+            }
+    }
+    
+    @ViewBuilder
+    private var timerPicker: some View {
+        HStack(alignment: .center, spacing: 0) {
+            // HOURS FIELD
+            TimeTextField(
+                value: $hours,
+                max: 23,
+                onMoveRight: { focusedField = .minutes },
+                onEnter: { createTimer() }
+            )
+            .focused($focusedField, equals: .hours)
+            
+            // SEPARATOR
+            Text(":")
+                .font(.system(size: 48, weight: .light, design: .rounded))
+                .foregroundStyle(.secondary)
+                .padding(0)
+            
+            TimeTextField(
+                value: $minutes, max: 59,
+                onMoveLeft: { focusedField = .hours },
+                onMoveRight: { focusedField = .seconds },
+                onEnter: { createTimer() }
+            ).focused($focusedField, equals: .minutes)
+            
+            // SEPARATOR
+            Text(":")
+                .font(.system(size: 48, weight: .light, design: .rounded))
+                .foregroundStyle(.secondary)
+            
+            TimeTextField(
+                value: $seconds, max: 59,
+                onMoveLeft: { focusedField = .minutes },
+                onEnter: { createTimer() }
+            )
+            .focused($focusedField, equals: .seconds)
+        }
+    }
+    
+    @ViewBuilder
+    private var createTimerButton: some View {
+        Button(Constants.createTimerButton) {
+            createTimer()
+        }
+        .fontWidth(.expanded)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.roundedRectangle)
+        .buttonSizing(.fitted)
+        .controlSize(.large)
+        .tint(selectedAccent)
+        .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
+        .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
+        .onHover { hovering in
+            if appViewModel.canCreateTimer && isNotEmpty {
+                isCreateButtonHovering = hovering
+            }
+        }
+    }
 
     @ViewBuilder
     private var themePicker: some View {
@@ -61,7 +150,7 @@ struct ContentView: View {
                 .fontWeight(.medium)
                 .foregroundStyle(selectedAccent)
             }
-            .menuStyle(.borderlessButton)
+            .menuStyle(.borderedButton)
             .fixedSize()
 
             themeSwatches
@@ -125,91 +214,15 @@ struct ContentView: View {
     
     var body: some View {
         VStack(alignment: .center, spacing: Sizing.xxl) {
-            VStack(alignment: .center, spacing: Sizing.xxl) {
+            VStack(alignment: .center, spacing: Sizing.lg) {
                 VStack(spacing: Sizing.sm) {
-                    TextField("", text: $title)
-                        .overlay(alignment: .center) {
-                            if title.isEmpty {
-                                Text(Constants.timerTitle)
-                                    .foregroundStyle(.tertiary)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                        .textCase(.uppercase)
-                        .font(.system(.headline, design: .default, weight: .heavy))
-                        .fontWidth(.expanded)
-                        .multilineTextAlignment(.center)
-                        .textFieldStyle(.plain)
-                        .focused($focusedField, equals: .title)
-                        .onChange(of: title) { oldValue, newValue in
-                            if newValue.count > characterLimit {
-                                title = String(newValue.prefix(characterLimit))
-                            } else {
-                                title = newValue.uppercased()
-                            }
-                        }
-                        .onKeyPress(.return) {
-                            focusedField = .minutes
-                            return .handled
-                        }
-                    
-                    HStack(alignment: .center, spacing: 0) {
-                        // HOURS FIELD
-                        TimeTextField(
-                            value: $hours,
-                            max: 23,
-                            onMoveRight: { focusedField = .minutes },
-                            onEnter: { createTimer() }
-                        )
-                        .focused($focusedField, equals: .hours)
-                        
-                        // SEPARATOR
-                        Text(":")
-                            .font(.system(size: 48, weight: .light, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .padding(0)
-                        
-                        TimeTextField(
-                            value: $minutes, max: 59,
-                            onMoveLeft: { focusedField = .hours },
-                            onMoveRight: { focusedField = .seconds },
-                            onEnter: { createTimer() }
-                        ).focused($focusedField, equals: .minutes)
-                        
-                        // SEPARATOR
-                        Text(":")
-                            .font(.system(size: 48, weight: .light, design: .rounded))
-                            .foregroundStyle(.secondary)
-                        
-                        TimeTextField(
-                            value: $seconds, max: 59,
-                            onMoveLeft: { focusedField = .minutes },
-                            onEnter: { createTimer() }
-                        )
-                        .focused($focusedField, equals: .seconds)
-                    }
+                    timerTitleField
+                    timerPicker
                 }
                 
                 VStack(spacing: Sizing.sm) {
-                    Button(Constants.createTimerButton) {
-                        createTimer()
-                    }
-                    .fontWidth(.expanded)
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.roundedRectangle)
-                    .buttonSizing(.fitted)
-                    .controlSize(.large)
-                    .tint(selectedAccent)
-                    .disabled(!(appViewModel.canCreateTimer && isNotEmpty))
-                    .scaleEffect(isCreateButtonHovering ? 1.08 : 1.0)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.45), value: isCreateButtonHovering)
-                    .onHover { hovering in
-                        if appViewModel.canCreateTimer && isNotEmpty {
-                            isCreateButtonHovering = hovering
-                        }
-                    }
-
                     themePicker
+                    createTimerButton
                 }
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))

@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct FloaterApp: App {
-    @State private var appViewModel = AppViewModel()
+    @State private var appViewModel = AppViewModel.shared
     @NSApplicationDelegateAdaptor private var appDelegate: FloaterAppDelegate
     
     var body: some Scene {

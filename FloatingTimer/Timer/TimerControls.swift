@@ -88,12 +88,12 @@ struct TimerControls: View {
                         onPlayPause()
                     } label: {
                         icon(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
-                            .foregroundStyle(configuration.prominentButton.foregroundColor ?? .white)
+                            .foregroundStyle(configuration.style == .regular ? configuration.prominentButton.foregroundColor ?? .white : configuration.accentColor)
                     }
                     .if(configuration.style == .regular) {
                         $0.modifier(ProminentButtonStyle(configuration: configuration))
                     }
-                    .if(configuration.style == .compact) { $0.buttonStyle(.plain).foregroundStyle(configuration.accentColor) }
+                    .if(configuration.style == .compact) { $0.buttonStyle(.plain) }
                     
                     .glassEffectID("playpause", in: namespace)
                     
@@ -206,6 +206,7 @@ private struct ProminentButtonStyle: ViewModifier {
             content
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.circle)
+                .tint(configuration.prominentButton.backgroundColor ?? configuration.accentColor)
                 .modifier(ButtonShadowModifier(isEnabled: configuration.buttonShadow))
         }
     }
@@ -268,6 +269,11 @@ extension View {
             self
         }
     }
+}
+
+#Preview {
+    ClassicTimerView(viewModel: TimerViewModel(model: TimerModel(title: "Focus", duration: 5)))
+        .frame(width: 220, height: 220)
 }
 
 #Preview {
