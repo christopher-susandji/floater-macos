@@ -9,14 +9,34 @@ import SwiftUI
 
 struct TimerListCell: View {
     @Bindable var viewModel: TimerViewModel
+    @Environment(AppViewModel.self) private var appViewModel
     var onDelete: (() -> Void)?
     @Namespace private var namespace
     @FocusState private var isTitleFocused: Bool
-    
+
+    private var isBroadcasting: Bool {
+        appViewModel.broadcastTimerID == viewModel.id
+    }
+
     var body: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: Sizing.xxs) {
-                TextField("", text: $viewModel.title)
+                HStack(spacing: Sizing.xs) {
+                    Button {
+                        if isBroadcasting {
+                            appViewModel.stopBroadcast()
+                        } else {
+                            appViewModel.startBroadcast(timerID: viewModel.id)
+                        }
+                    } label: {
+                        Image(systemName: isBroadcasting ? "video.fill" : "video")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
+                    }
+                    .buttonStyle(.plain)
+                    .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
+
+                    TextField("", text: $viewModel.title)
                     .overlay(alignment: .leading) {
                         if viewModel.title.isEmpty {
                             Text(Constants.untitled)
@@ -37,6 +57,7 @@ struct TimerListCell: View {
                             viewModel.title = newValue.uppercased()
                         }
                     }
+                }
                 
                 Text(viewModel.timeText)
                     .contentTransition(.numericText(countsDown: true))

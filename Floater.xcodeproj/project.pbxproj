@@ -9,6 +9,8 @@
 /* Begin PBXFileReference section */
 		D2006E56301744900097A75A /* Floater.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Floater.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Floater-Info.plist"; sourceTree = "<group>"; };
+		D21CB00030ABC0DE00F10A75 /* FloaterCamera.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = FloaterCamera.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D21CB00130ABC0DE00F10A75 /* Floater.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Floater.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -17,10 +19,22 @@
 			path = FloatingTimer;
 			sourceTree = "<group>";
 		};
+		D21CB01030ABC0DE00F10A75 /* FloaterCamera */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FloaterCamera;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D2006E53301744900097A75A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D21CB00830ABC0DE00F10A75 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -34,7 +48,9 @@
 			isa = PBXGroup;
 			children = (
 				D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */,
+				D21CB00130ABC0DE00F10A75 /* Floater.entitlements */,
 				D2006E58301744900097A75A /* FloatingTimer */,
+				D21CB01030ABC0DE00F10A75 /* FloaterCamera */,
 				D2006E57301744900097A75A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				D2006E56301744900097A75A /* Floater.app */,
+				D21CB00030ABC0DE00F10A75 /* FloaterCamera.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,10 +74,12 @@
 				D2006E52301744900097A75A /* Sources */,
 				D2006E53301744900097A75A /* Frameworks */,
 				D2006E54301744900097A75A /* Resources */,
+				D21CB01330ABC0DE00F10A75 /* Embed System Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D21CB00F30ABC0DE00F10A75 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D2006E58301744900097A75A /* FloatingTimer */,
@@ -71,6 +90,28 @@
 			productName = FloatingTimer;
 			productReference = D2006E56301744900097A75A /* Floater.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D21CB00630ABC0DE00F10A75 /* FloaterCamera */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D21CB00C30ABC0DE00F10A75 /* Build configuration list for PBXNativeTarget "FloaterCamera" */;
+			buildPhases = (
+				D21CB00730ABC0DE00F10A75 /* Sources */,
+				D21CB00830ABC0DE00F10A75 /* Frameworks */,
+				D21CB00930ABC0DE00F10A75 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D21CB01030ABC0DE00F10A75 /* FloaterCamera */,
+			);
+			name = FloaterCamera;
+			packageProductDependencies = (
+			);
+			productName = FloaterCamera;
+			productReference = D21CB00030ABC0DE00F10A75 /* FloaterCamera.appex */;
+			productType = "com.apple.product-type.system-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -83,6 +124,9 @@
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					D2006E55301744900097A75A = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					D21CB00630ABC0DE00F10A75 = {
 						CreatedOnToolsVersion = 26.6;
 					};
 				};
@@ -102,12 +146,20 @@
 			projectRoot = "";
 			targets = (
 				D2006E55301744900097A75A /* Floater */,
+				D21CB00630ABC0DE00F10A75 /* FloaterCamera */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D2006E54301744900097A75A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D21CB00930ABC0DE00F10A75 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -124,7 +176,50 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D21CB00730ABC0DE00F10A75 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXBuildFile section */
+		D21CB01430ABC0DE00F10A75 /* FloaterCamera.appex in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = D21CB00030ABC0DE00F10A75 /* FloaterCamera.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D21CB00D30ABC0DE00F10A75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2006E4E301744900097A75A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D21CB00630ABC0DE00F10A75;
+			remoteInfo = FloaterCamera;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D21CB01330ABC0DE00F10A75 /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				D21CB01430ABC0DE00F10A75 /* FloaterCamera.appex in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D21CB00F30ABC0DE00F10A75 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D21CB00630ABC0DE00F10A75 /* FloaterCamera */;
+			targetProxy = D21CB00D30ABC0DE00F10A75 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D2006E5F301744910097A75A /* Debug */ = {
@@ -254,6 +349,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Floater.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YMBQH9QU3B;
@@ -291,6 +387,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Floater.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YMBQH9QU3B;
@@ -321,6 +418,54 @@
 			};
 			name = Release;
 		};
+		D21CB00A30ABC0DE00F10A75 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FloaterCamera/FloaterCamera.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YMBQH9QU3B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FloaterCamera/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.Floater.FloaterCamera;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D21CB00B30ABC0DE00F10A75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FloaterCamera/FloaterCamera.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YMBQH9QU3B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FloaterCamera/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.christophersusandji.Floater.FloaterCamera;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -338,6 +483,15 @@
 			buildConfigurations = (
 				D2006E62301744910097A75A /* Debug */,
 				D2006E63301744910097A75A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D21CB00C30ABC0DE00F10A75 /* Build configuration list for PBXNativeTarget "FloaterCamera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D21CB00A30ABC0DE00F10A75 /* Debug */,
+				D21CB00B30ABC0DE00F10A75 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

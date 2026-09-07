@@ -18,7 +18,14 @@ final class AppViewModel {
     static let shared = AppViewModel()
 
     var timerViewModels: [TimerViewModel] = []
-    
+
+    /// The timer currently selected for live-video broadcast. `nil` means
+    /// `LiveVideoFrameSource` renders its placeholder.
+    var broadcastTimerID: UUID?
+
+    /// Whether the live-video source is actively pushing frames into the camera.
+    var isBroadcasting: Bool = false
+
     var canCreateTimer: Bool {
         timerViewModels.count < Self.maxTimerCount
     }
@@ -33,10 +40,30 @@ final class AppViewModel {
     }
 
     func removeTimer(id: UUID) {
+        if broadcastTimerID == id {
+            stopBroadcast()
+        }
         timerViewModels.removeAll { $0.id == id }
     }
 
     func timerViewModel(id: UUID) -> TimerViewModel? {
         timerViewModels.first { $0.id == id }
+    }
+
+    // - MARK: Live video broadcast
+
+    /// Starts (or restarts) broadcasting the given timer as a live-video source.
+    func startBroadcast(timerID: UUID) {
+        broadcastTimerID = timerID
+        LiveVideoFrameSource.shared.viewModel = timerViewModel(id: timerID)
+        LiveVideoFrameSource.shared.start()
+        isBroadcasting = true
+    }
+
+    /// Stops broadcasting and returns the camera to its placeholder output.
+    func stopBroadcast() {
+        LiveVideoFrameSource.shared.stop()
+        broadcastTimerID = nil
+        isBroadcasting = false
     }
 }

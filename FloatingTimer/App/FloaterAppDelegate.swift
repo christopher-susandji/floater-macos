@@ -10,6 +10,7 @@ import AppKit
 class FloaterAppDelegate: NSResponder, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
+        CameraExtensionManager.shared.install()
 
         let hiddenIndexes = [1, 2, 4] // 1 = File, 2 = Edit, 4 = Help
         if let items = NSApp.mainMenu?.items {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CMIOExtension</key>
+	<dict>
+		<key>CMIOExtensionMachServiceName</key>
+		<string>YMBQH9QU3B.me.christophersusandji.Floater</string>
+	</dict>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>Floater installs a virtual camera so your timer can be used as a live video source in Keynote and other apps.</string>
+</dict>
+</plist>
