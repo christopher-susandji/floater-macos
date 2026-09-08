@@ -17,8 +17,8 @@ import os.log
 ///
 /// This deliberately avoids `ScreenCaptureKit`: capturing the real panel window
 /// requires `com.apple.security.device.screen-recording`, which App Store /
-/// TestFlight builds cannot use. Instead we rasterize a broadcast-ready timer
-/// view (`BroadcastTimerView`) — App Store-compatible.
+/// TestFlight builds cannot use. Instead we rasterize the same `TimerView` the
+/// panel hosts, so the feed looks identical to the panel — App Store-compatible.
 ///
 /// Transport is the "sink stream" pattern (see `ldenoue/cameraextension`): the
 /// host app opens the extension's sink `CMIOStream` and enqueues frames; no XPC
@@ -49,9 +49,6 @@ final class LiveVideoFrameSource {
 
     /// The timer whose rendered view is broadcast. Set before calling `start()`.
     var viewModel: TimerViewModel?
-
-    /// Render target size; must match the extension's format (1280x720).
-    private let outputSize = CGSize(width: CGFloat(Constants.width), height: CGFloat(Constants.height))
 
     private init() {}
 
@@ -261,12 +258,25 @@ final class LiveVideoFrameSource {
             space: colorSpace,
             bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
         ) {
-            context.interpolationQuality = .low
+            context.interpolationQuality = .high
             context.clear(CGRect(x: 0, y: 0, width: width, height: height))
             // Fill solid black so the timer bakes onto an opaque background.
             context.setFillColor(CGColor(gray: 0, alpha: 1))
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+            // Center the square timer image (aspect-fit) in the 16:9 frame.
+            let imageWidth = CGFloat(cgImage.width)
+            let imageHeight = CGFloat(cgImage.height)
+            let scale = min(CGFloat(width) / imageWidth, CGFloat(height) / imageHeight)
+            let drawWidth = imageWidth * scale
+            let drawHeight = imageHeight * scale
+            let drawRect = CGRect(
+                x: (CGFloat(width) - drawWidth) / 2,
+                y: (CGFloat(height) - drawHeight) / 2,
+                width: drawWidth,
+                height: drawHeight
+            )
+            context.draw(cgImage, in: drawRect)
         }
 
         var sampleBuffer: CMSampleBuffer?
@@ -288,27 +298,25 @@ final class LiveVideoFrameSource {
         }
     }
 
-    /// Rasterizes the broadcast timer view into a `CGImage`.
+    /// Rasterizes the **same view the floating panel hosts** (`TimerView`) into a
+    /// `CGImage`, so the broadcast feed is identical in appearance to the panel.
+    /// The panel is 220×220; we render it square and scale up to 720×720 so it
+    /// sits centered in the 1280×720 frame without distortion.
     private func renderCurrentFrame() -> CGImage? {
-        let rootView: AnyView
-        if let viewModel {
-            rootView = AnyView(
-                BroadcastTimerView(viewModel: viewModel)
-                    .frame(width: outputSize.width, height: outputSize.height)
-            )
-        } else {
-            rootView = AnyView(
-                Text("Floater")
-                    .font(.system(size: 120, weight: .heavy))
-                    .foregroundStyle(.white)
-                    .frame(width: outputSize.width, height: outputSize.height)
-                    .background(Color.black)
-            )
-        }
+        let panelSize: CGFloat = 220
+        let scaledSize: CGFloat = CGFloat(Constants.height) // 720, square
+
+        guard let viewModel else { return nil }
+
+        let rootView = AnyView(
+            TimerView(viewModel: viewModel)
+                .environment(\.controlActiveState, .key)
+                .frame(width: panelSize, height: panelSize)
+        )
 
         let renderer = ImageRenderer(content: rootView)
-        renderer.proposedSize = ProposedViewSize(outputSize)
-        renderer.scale = 1.0
+        renderer.proposedSize = ProposedViewSize(width: panelSize, height: panelSize)
+        renderer.scale = scaledSize / panelSize
         return renderer.cgImage
     }
 }

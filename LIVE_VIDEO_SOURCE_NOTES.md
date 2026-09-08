@@ -115,15 +115,15 @@ floating panel with transparency.
       Prompt appears on first launch; needs a manual run to verify.
 
 ### Phase 2 — Produce frames
-- [x] Render a **clean timer view** offscreen (`BroadcastTimerView`) into `CVPixelBuffer`s and
-      stream those. (`App/LiveVideoFrameSource.swift`.)
+- [x] Render a **clean timer view** offscreen into `CVPixelBuffer`s and stream those.
+      (`App/LiveVideoFrameSource.swift`.) The feed now renders the **same `TimerView` the panel
+      hosts** (classic/vintage theme, `.controlActiveState .key`, 220×220 → scaled square),
+      so it matches the panel's appearance. (`renderCurrentFrame`).
       **Note:** we originally tried capturing the real NSPanel window via `ScreenCaptureKit`,
       but that requires `com.apple.security.device.screen-recording`, which **App Store /
       TestFlight builds reject** (build upload error 90285). So the App Store-compatible path
-      is offscreen rendering, not window capture. Real-panel capture would require Developer
-      ID / notarized distribution outside the App Store.
-- [x] Drive it from the existing `TimerEngine`/`TimerViewModel` state (tick 30fps, redraw on
-      change). (`LiveVideoFrameSource` renders `BroadcastTimerView(viewModel:)` each tick via `ImageRenderer`.)
+      is offscreen rendering of `TimerView`, not window capture. Real-panel capture would require
+      Developer ID / notarized distribution outside the App Store.
 - [x] Feed frames into the extension via the chosen transport. (Host enqueues into the extension's sink stream via `CMIOStreamCopyBufferQueue`; extension forwards sink→source.)
 - [x] Ensure the camera outputs black/placeholder frames when no timer is broadcasting.
       (Extension renders the placeholder when `sinkActive == false`; host renders "Floater" when `viewModel == nil`.)
