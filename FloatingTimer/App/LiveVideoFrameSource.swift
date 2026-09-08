@@ -30,7 +30,7 @@ final class LiveVideoFrameSource {
     enum Constants {
         static let deviceName = "Floater"
         static let frameRate = 30
-        static let width: Int32 = 1280
+        static let width: Int32 = 720
         static let height: Int32 = 720
     }
 
@@ -55,6 +55,12 @@ final class LiveVideoFrameSource {
     /// Defaults to black.
     var backgroundColor: Color = .black
 
+    /// Interpolation state for the broadcast ring: the last whole-second value
+    /// observed and the wall-clock time it was seen, so we can synthesize a
+    /// smooth, continuously-decreasing `remaining` between engine ticks.
+    private var lastRemaining: TimeInterval?
+    private var lastRemainingTimestamp: TimeInterval = 0
+
     private init() {}
 
     // - MARK: Public API
@@ -74,6 +80,7 @@ final class LiveVideoFrameSource {
         sinkStream = nil
         deviceID = nil
         viewModel = nil
+        lastRemaining = nil
     }
 
     // - MARK: Format setup
@@ -270,19 +277,8 @@ final class LiveVideoFrameSource {
             context.setFillColor(backgroundColor.cgColor)
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
-            // Center the square timer image (aspect-fit) in the 16:9 frame.
-            let imageWidth = CGFloat(cgImage.width)
-            let imageHeight = CGFloat(cgImage.height)
-            let scale = min(CGFloat(width) / imageWidth, CGFloat(height) / imageHeight)
-            let drawWidth = imageWidth * scale
-            let drawHeight = imageHeight * scale
-            let drawRect = CGRect(
-                x: (CGFloat(width) - drawWidth) / 2,
-                y: (CGFloat(height) - drawHeight) / 2,
-                width: drawWidth,
-                height: drawHeight
-            )
-            context.draw(cgImage, in: drawRect)
+            // The rendered timer image is already the full frame size (square).
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         }
 
         var sampleBuffer: CMSampleBuffer?
@@ -306,24 +302,39 @@ final class LiveVideoFrameSource {
 
     /// Rasterizes the **same view the floating panel hosts** (`TimerView`) into a
     /// `CGImage`, so the broadcast feed is identical in appearance to the panel.
-    /// The panel is 220×220; we render it square and scale up to 720×720 so it
-    /// sits centered in the 1280×720 frame without distortion.
+    /// The panel is 220×220; we render it square and scale up to 720×720, which
+    /// fills the (now square) camera frame.
     private func renderCurrentFrame() -> CGImage? {
         let panelSize: CGFloat = 220
         let scaledSize: CGFloat = CGFloat(Constants.height) // 720, square
 
         guard let viewModel else { return nil }
 
-        let rootView = AnyView(
-            TimerView(viewModel: viewModel)
-                .environment(\.controlActiveState, .key)
-                .frame(width: panelSize, height: panelSize)
-        )
+        let rootView = TimerView(viewModel: viewModel)
+            .environment(\.controlActiveState, .key)
+            .environment(\.broadcastSmoothRemaining, smoothRemaining(for: viewModel))
+            .frame(width: panelSize, height: panelSize)
 
         let renderer = ImageRenderer(content: rootView)
         renderer.proposedSize = ProposedViewSize(width: panelSize, height: panelSize)
         renderer.scale = scaledSize / panelSize
         return renderer.cgImage
+    }
+
+    /// A continuously-decreasing `remaining` value (with sub-second precision)
+    /// so the broadcast ring sweeps smoothly instead of jumping once per second.
+    private func smoothRemaining(for viewModel: TimerViewModel) -> TimeInterval {
+        let wholeSecond = viewModel.remaining
+        let now = ProcessInfo.processInfo.systemUptime
+        if lastRemaining != wholeSecond {
+            lastRemaining = wholeSecond
+            lastRemainingTimestamp = now
+            return wholeSecond
+        }
+        guard let lastRemaining else { return wholeSecond }
+        let elapsed = now - lastRemainingTimestamp
+        guard elapsed < 1 else { return wholeSecond }
+        return max(0, lastRemaining - elapsed)
     }
 }
 

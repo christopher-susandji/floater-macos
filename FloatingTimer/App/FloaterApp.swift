@@ -33,5 +33,9 @@ struct FloaterApp: App {
             CommandGroup(replacing: .sidebar) { }
             CommandGroup(replacing: .systemServices) { }
         }
+
+        Settings {
+            SettingsView()
+        }
     }
 }

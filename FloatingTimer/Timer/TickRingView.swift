@@ -12,10 +12,32 @@ struct TickRingTheme {
     let ringActive: Color
 }
 
+/// Injected when rendering the live-video broadcast so `TickRingView` can sweep
+/// smoothly between whole-second engine ticks (which only fire 1×/sec).
+private struct BroadcastSmoothRemainingKey: EnvironmentKey {
+    static let defaultValue: TimeInterval? = nil
+}
+
+extension EnvironmentValues {
+    var broadcastSmoothRemaining: TimeInterval? {
+        get { self[BroadcastSmoothRemainingKey.self] }
+        set { self[BroadcastSmoothRemainingKey.self] = newValue }
+    }
+}
+
 struct TickRingView: View {
+    @Environment(\.broadcastSmoothRemaining) private var broadcastRemaining: TimeInterval?
+
     var remaining: TimeInterval
     var theme: TickRingTheme
     var tickCount: Int = 60
+
+    /// The value actually driving the ring — an interpolated sub-second value
+    /// when rendering the live-video broadcast (for a smooth sweep), otherwise
+    /// the whole-second `remaining` from the timer.
+    private var effectiveRemaining: TimeInterval {
+        broadcastRemaining ?? remaining
+    }
     
     var body: some View {
         GeometryReader { geo in
@@ -52,13 +74,13 @@ struct TickRingView: View {
                 }
             }
             .frame(width: size, height: size)
-            .animation(.linear(duration: 0.2), value: remaining)
+            .animation(broadcastRemaining == nil ? .linear(duration: 0.2) : nil, value: effectiveRemaining)
         }
     }
     
     private func color(for tickPhase: Double) -> Color {
         let baseOpacity = 0.10
-        if remaining <= 0 {
+        if effectiveRemaining <= 0 {
             return theme.ringBase.opacity(baseOpacity)
         }
         
@@ -66,7 +88,7 @@ struct TickRingView: View {
         let dToHead = wrappedDistanceForward(from: tickPhase, to: headPhase)
         let trailLength = 1.0
         var trail = max(0, 1 - dToHead / trailLength)
-        let isLastMinute = remaining < 60
+        let isLastMinute = effectiveRemaining < 60
         if isLastMinute && tickPhase > headPhase {
             trail = 0
         }
@@ -182,7 +204,7 @@ private extension TickRingView {
     }
     
     var headPhase: Double {
-        let total = max(0, remaining)
+        let total = max(0, effectiveRemaining)
         let secondsIntoCurrentMinute = total.truncatingRemainder(dividingBy: 60)
         let progress = secondsIntoCurrentMinute / 60.0
         return progress

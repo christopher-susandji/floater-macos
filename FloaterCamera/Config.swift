@@ -10,6 +10,6 @@ import Foundation
 enum CameraConfig {
     static let frameRate: Int = 30
     static let deviceName = "Floater"
-    static let width: Int32 = 1280
+    static let width: Int32 = 720
     static let height: Int32 = 720
 }

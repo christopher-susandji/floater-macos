@@ -7,11 +7,15 @@
 
 import Foundation
 import SystemExtensions
+import AVFoundation
+import Observation
 
-/// Requests installation/activation of the FloaterCamera extension so the
-/// virtual camera becomes available system-wide. The user must approve the
-/// prompt and, if macOS requires, allow it in System Settings → Privacy & Security.
+/// Manages the FloaterCamera system extension: activation, deactivation, and
+/// reflecting whether it's currently installed. Activation is user-initiated
+/// (from Settings), not automatic, so the system approval prompt only appears
+/// when the user asks for it.
 @MainActor
+@Observable
 final class CameraExtensionManager: NSObject {
     static let shared = CameraExtensionManager()
 
@@ -21,8 +25,60 @@ final class CameraExtensionManager: NSObject {
     /// extension's CFBundleIdentifier.
     private let extensionIdentifier = "me.christophersusandji.Floater.FloaterCamera"
 
+    /// Whether the camera extension is currently active, determined by whether
+    /// its "Floater" virtual camera is enumerable. Sandbox-safe (spawning
+    /// `systemextensionsctl` isn't possible from an App Store app).
+    private(set) var isInstalled: Bool = false
+
+    override private init() {
+        super.init()
+        refreshInstalledState()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(deviceListChanged),
+            name: .AVCaptureDeviceWasConnected,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(deviceListChanged),
+            name: .AVCaptureDeviceWasDisconnected,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    /// Re-reads whether the Floater camera is present.
+    func refreshInstalledState() {
+        let session = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.external],
+            mediaType: .video,
+            position: .unspecified
+        )
+        isInstalled = session.devices.contains { $0.localizedName == "Floater" }
+    }
+
+    @objc private func deviceListChanged() {
+        refreshInstalledState()
+    }
+
+    /// Activates the camera extension, presenting the system approval prompt.
     func install() {
         let request = OSSystemExtensionRequest.activationRequest(
+            forExtensionWithIdentifier: extensionIdentifier,
+            queue: .main
+        )
+        request.delegate = self
+        pendingRequest = request
+        OSSystemExtensionManager.shared.submitRequest(request)
+    }
+
+    /// Deactivates the camera extension.
+    func uninstall() {
+        let request = OSSystemExtensionRequest.deactivationRequest(
             forExtensionWithIdentifier: extensionIdentifier,
             queue: .main
         )
@@ -39,9 +95,13 @@ extension CameraExtensionManager: OSSystemExtensionRequestDelegate {
 
     func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {}
 
-    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {}
+    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
+        pendingRequest = nil
+        refreshInstalledState()
+    }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         pendingRequest = nil
+        refreshInstalledState()
     }
 }
