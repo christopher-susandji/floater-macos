@@ -83,6 +83,16 @@ final class LiveVideoFrameSource {
         lastRemaining = nil
     }
 
+    /// Disconnects the active timer but keeps the camera streaming, rendering the
+    /// contextual placeholder instead of freezing on the last timer frame.
+    func showPlaceholder() {
+        viewModel = nil
+        lastRemaining = nil
+        if sinkQueue == nil {
+            start()
+        }
+    }
+
     // - MARK: Format setup
 
     private func configureFormat() {
@@ -246,7 +256,14 @@ final class LiveVideoFrameSource {
             readyToEnqueue = false
             return
         }
-        guard let cgImage = renderCurrentFrame() else { return }
+        let cgImage: CGImage
+        if viewModel != nil {
+            guard let rendered = renderCurrentFrame() else { return }
+            cgImage = rendered
+        } else {
+            guard let placeholder = renderPlaceholder() else { return }
+            cgImage = placeholder
+        }
 
         readyToEnqueue = false
 
@@ -321,6 +338,18 @@ final class LiveVideoFrameSource {
         return renderer.cgImage
     }
 
+    /// Rasterizes the contextual placeholder shown when no timer is being
+    /// broadcast (matches the extension's idle frame design).
+    private func renderPlaceholder() -> CGImage? {
+        let size: CGFloat = CGFloat(Constants.height) // 720, square
+        let rootView = BroadcastPlaceholderView()
+            .frame(width: size, height: size)
+        let renderer = ImageRenderer(content: rootView)
+        renderer.proposedSize = ProposedViewSize(width: size, height: size)
+        renderer.scale = 1
+        return renderer.cgImage
+    }
+
     /// A continuously-decreasing `remaining` value (with sub-second precision)
     /// so the broadcast ring sweeps smoothly instead of jumping once per second.
     private func smoothRemaining(for viewModel: TimerViewModel) -> TimeInterval {
@@ -342,5 +371,65 @@ private extension Color {
     /// The `CGColor` used to paint the broadcast backdrop (opaque RGB).
     var cgColor: CGColor {
         NSColor(self).usingColorSpace(.deviceRGB)?.cgColor ?? NSColor.black.cgColor
+    }
+}
+
+/// The idle "no timer selected" frame shown in the broadcast when the user
+/// disconnects the camera or no timer is active.
+struct BroadcastPlaceholderView: View {
+    private let accent = Color(red: 1.0, green: 0.55, blue: 0.16)
+
+    var body: some View {
+        ZStack {
+            Color(white: 0.06)
+                .ignoresSafeArea()
+
+            RoundedRectangle(cornerRadius: 44)
+                .strokeBorder(Color(white: 0.35), style: StrokeStyle(lineWidth: 2, dash: [10, 8]))
+                .padding(34)
+
+            VStack(spacing: 24) {
+                FloaterGlyph(accent: accent)
+                    .frame(width: 120, height: 120)
+
+                Text("FLOATER")
+                    .font(.system(size: 56, weight: .heavy))
+                    .foregroundStyle(.white)
+
+                Text("No active timer selected as source.\nOpen Floater and select a timer.")
+                    .font(.system(size: 22))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color(white: 0.6))
+                    .lineSpacing(6)
+            }
+        }
+    }
+}
+
+/// The Floater app glyph: an amber tick-ring timer face with a clock hand.
+private struct FloaterGlyph: View {
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let r = min(geo.size.width, geo.size.height) / 2
+            ZStack {
+                Circle()
+                    .stroke(accent, lineWidth: r * 0.12)
+                Circle()
+                    .trim(from: 0, to: 0.25)
+                    .stroke(.white, lineWidth: r * 0.10)
+                    .rotationEffect(.degrees(-90))
+                ForEach(0..<12, id: \.self) { i in
+                    Rectangle()
+                        .fill(.white)
+                        .frame(width: r * 0.04, height: r * (i % 3 == 0 ? 0.20 : 0.12))
+                        .offset(y: -r * 0.80)
+                        .rotationEffect(.degrees(Double(i) * 30))
+                }
+            }
+            .frame(width: r * 2, height: r * 2)
+            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+        }
     }
 }

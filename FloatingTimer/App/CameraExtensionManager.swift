@@ -36,13 +36,13 @@ final class CameraExtensionManager: NSObject {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(deviceListChanged),
-            name: .AVCaptureDeviceWasConnected,
+            name: AVCaptureDevice.wasConnectedNotification,
             object: nil
         )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(deviceListChanged),
-            name: .AVCaptureDeviceWasDisconnected,
+            name: AVCaptureDevice.wasDisconnectedNotification,
             object: nil
         )
     }

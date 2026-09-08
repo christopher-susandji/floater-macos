@@ -84,7 +84,7 @@ final class AppViewModel {
 
     /// Stops broadcasting and returns the camera to its placeholder output.
     func stopBroadcast() {
-        LiveVideoFrameSource.shared.stop()
+        LiveVideoFrameSource.shared.showPlaceholder()
         broadcastTimerID = nil
         isBroadcasting = false
     }
