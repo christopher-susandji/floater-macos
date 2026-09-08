@@ -34,10 +34,23 @@ enum FloaterFrameRenderer {
         context.strokePath()
         context.restoreGState()
 
-        drawIcon(in: context, center: CGPoint(x: w / 2, y: h * 0.62), radius: min(w, h) * 0.13)
+        let iconCenter = CGPoint(x: w / 2, y: h * 0.62)
+        let iconRadius = min(w, h) * 0.13
+        if let iconImage = bundledAppIcon {
+            let side = iconRadius * 2
+            let iconRect = CGRect(x: iconCenter.x - iconRadius, y: iconCenter.y - iconRadius, width: side, height: side)
+            context.saveGState()
+            context.interpolationQuality = .high
+            if let cgImage = iconImage.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                context.draw(cgImage, in: iconRect)
+            }
+            context.restoreGState()
+        } else {
+            drawIcon(in: context, center: iconCenter, radius: iconRadius)
+        }
 
         // Title.
-        let title = "FLOATER"
+        let title = "Floater"
         let titleFont = NSFont.systemFont(ofSize: min(w, h) * 0.10, weight: .heavy)
         let titleAttrs: [NSAttributedString.Key: Any] = [
             .font: titleFont,
@@ -65,6 +78,14 @@ enum FloaterFrameRenderer {
             in: CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.76, height: messageSize.height),
             withAttributes: messageAttrs
         )
+    }
+
+    /// The real Floater app icon (a flattened copy bundled with the extension),
+    /// or `nil` if the asset is missing — in which case we fall back to the
+    /// hand-drawn glyph.
+    private static var bundledAppIcon: NSImage? {
+        guard let url = Bundle.main.url(forResource: "AppIcon", withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
     }
 
     /// Draws the Floater app icon as a timer glyph (a tick ring + hand), using
