@@ -21,10 +21,23 @@
 		};
 		D21CB01030ABC0DE00F10A75 /* FloaterCamera */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D21CB01530ABC0DE00F10A75 /* Exceptions for "FloaterCamera" folder in "FloaterCamera" target */,
+			);
 			path = FloaterCamera;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D21CB01530ABC0DE00F10A75 /* Exceptions for "FloaterCamera" folder in "FloaterCamera" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D21CB00630ABC0DE00F10A75 /* FloaterCamera */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D2006E53301744900097A75A /* Frameworks */ = {

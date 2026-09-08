@@ -101,7 +101,7 @@ final class LiveVideoFrameSource {
 
     private func findFloaterDevice() -> AVCaptureDevice? {
         let session = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.externalUnknown],
+            deviceTypes: [.external],
             mediaType: .video,
             position: .unspecified
         )
@@ -125,9 +125,11 @@ final class LiveVideoFrameSource {
         for deviceObjectID in devices {
             opa.mSelector = CMIOObjectPropertySelector(kCMIODevicePropertyDeviceUID)
             CMIOObjectGetPropertyDataSize(deviceObjectID, &opa, 0, nil, &dataSize)
-            var name: CFString = "" as CFString
-            CMIOObjectGetPropertyData(deviceObjectID, &opa, 0, nil, dataSize, &dataUsed, &name)
-            if String(name) == uid {
+            let namePtr = UnsafeMutablePointer<Unmanaged<CFString>?>.allocate(capacity: 1)
+            defer { namePtr.deallocate() }
+            CMIOObjectGetPropertyData(deviceObjectID, &opa, 0, nil, dataSize, &dataUsed, namePtr)
+            let name = namePtr.pointee?.takeUnretainedValue() as String? ?? ""
+            if name == uid {
                 return deviceObjectID
             }
         }
