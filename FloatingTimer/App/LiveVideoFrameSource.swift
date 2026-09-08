@@ -99,6 +99,36 @@ final class LiveVideoFrameSource {
 
     // - MARK: Discovery
 
+    /// Finds the Floater CMIO device directly (no AVCaptureDevice dependency),
+    /// so discovery works even before camera permission is granted.
+    private func findFloaterCMIODeviceID() -> CMIODeviceID? {
+        var dataSize: UInt32 = 0
+        var dataUsed: UInt32 = 0
+        var opa = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain)
+        )
+        CMIOObjectGetPropertyDataSize(CMIOObjectID(kCMIOObjectSystemObject), &opa, 0, nil, &dataSize)
+        let count = Int(dataSize) / MemoryLayout<CMIOObjectID>.size
+        guard count > 0 else { return nil }
+        var devices = [CMIOObjectID](repeating: 0, count: count)
+        CMIOObjectGetPropertyData(CMIOObjectID(kCMIOObjectSystemObject), &opa, 0, nil, dataSize, &dataUsed, &devices)
+
+        for deviceObjectID in devices {
+            opa.mSelector = CMIOObjectPropertySelector(0x6C6E616D) // 'lnam' = kCMIODevicePropertyLocalizedName
+            CMIOObjectGetPropertyDataSize(deviceObjectID, &opa, 0, nil, &dataSize)
+            let namePtr = UnsafeMutablePointer<Unmanaged<CFString>?>.allocate(capacity: 1)
+            defer { namePtr.deallocate() }
+            CMIOObjectGetPropertyData(deviceObjectID, &opa, 0, nil, dataSize, &dataUsed, namePtr)
+            let name = namePtr.pointee?.takeUnretainedValue() as String? ?? ""
+            if name == Constants.deviceName {
+                return deviceObjectID
+            }
+        }
+        return nil
+    }
+
     private func findFloaterDevice() -> AVCaptureDevice? {
         let session = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.external],
@@ -153,10 +183,14 @@ final class LiveVideoFrameSource {
     }
 
     private func connectToSinkStream() {
-        guard let device = findFloaterDevice(),
-              let deviceID = cmioDeviceID(uid: device.uniqueID) else {
-            return
-        }
+        let deviceID: CMIODeviceID? = {
+            if let direct = findFloaterCMIODeviceID() {
+                return direct
+            }
+            guard let device = findFloaterDevice() else { return nil }
+            return cmioDeviceID(uid: device.uniqueID)
+        }()
+        guard let deviceID else { return }
         self.deviceID = deviceID
 
         let streamIDs = streams(for: deviceID)

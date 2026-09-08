@@ -10,5 +10,7 @@
 	<array>
 		<string>YMBQH9QU3B.me.christophersusandji.Floater</string>
 	</array>
+	<key>com.apple.security.device.camera</key>
+	<true/>
 </dict>
 </plist>
