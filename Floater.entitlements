@@ -12,7 +12,5 @@
 	</array>
 	<key>com.apple.security.device.camera</key>
 	<true/>
-	<key>com.apple.security.device.screen-recording</key>
-	<true/>
 </dict>
 </plist>

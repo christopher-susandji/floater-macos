@@ -115,14 +115,18 @@ floating panel with transparency.
       Prompt appears on first launch; needs a manual run to verify.
 
 ### Phase 2 — Produce frames
-- [x] Capture the **real timer NSPanel** window via ScreenCaptureKit (`SCStream` on the panel's
-      `CGWindowID`) and stream those frames — shows exactly what the floating panel shows.
-      (`App/LiveVideoFrameSource.swift`; replaced the earlier offscreen `ImageRenderer` plan.)
-- [x] Drive it from the existing `TimerEngine`/`TimerViewModel` state — the panel itself is
-      the source, so no separate render loop is needed. Frames arrive via `SCStreamOutput`.
+- [x] Render a **clean timer view** offscreen (`BroadcastTimerView`) into `CVPixelBuffer`s and
+      stream those. (`App/LiveVideoFrameSource.swift`.)
+      **Note:** we originally tried capturing the real NSPanel window via `ScreenCaptureKit`,
+      but that requires `com.apple.security.device.screen-recording`, which **App Store /
+      TestFlight builds reject** (build upload error 90285). So the App Store-compatible path
+      is offscreen rendering, not window capture. Real-panel capture would require Developer
+      ID / notarized distribution outside the App Store.
+- [x] Drive it from the existing `TimerEngine`/`TimerViewModel` state (tick 30fps, redraw on
+      change). (`LiveVideoFrameSource` renders `BroadcastTimerView(viewModel:)` each tick via `ImageRenderer`.)
 - [x] Feed frames into the extension via the chosen transport. (Host enqueues into the extension's sink stream via `CMIOStreamCopyBufferQueue`; extension forwards sink→source.)
 - [x] Ensure the camera outputs black/placeholder frames when no timer is broadcasting.
-      (Extension renders the placeholder when `sinkActive == false`.)
+      (Extension renders the placeholder when `sinkActive == false`; host renders "Floater" when `viewModel == nil`.)
 
 ### Phase 3 — UX & lifecycle
 - [x] Add an on/off "Live Video" control (menu command / App Intent / timer context menu).
@@ -132,9 +136,8 @@ floating panel with transparency.
       timer's panel window via `FloatingTimerManager.windowID(for:)`.)
 - [ ] Handle timer finished / reset / edit while broadcasting.
 - [ ] Graceful teardown: stop stream, deactivate or idle the extension, survive app quit.
-- [ ] Permissions: app requests Camera + Screen Recording on first broadcast (`NSCameraUsageDescription`
-      in Info.plist, `com.apple.security.device.camera` + `com.apple.security.device.screen-recording`
-      entitlements).
+- [x] Permissions: app uses `com.apple.security.device.camera` + `NSCameraUsageDescription`
+      (App Store-compatible). `screen-recording` is intentionally excluded (not allowed on the App Store).
 
 ### Phase 4 — Polish & validation
 - [ ] Test in Keynote fullscreen + windowed + presenter display.

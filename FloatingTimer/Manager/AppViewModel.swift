@@ -54,9 +54,9 @@ final class AppViewModel {
 
     /// Starts (or restarts) broadcasting the given timer as a live-video source.
     func startBroadcast(timerID: UUID) {
-        guard let windowID = FloatingTimerManager.shared.windowID(for: timerID) else { return }
         broadcastTimerID = timerID
-        LiveVideoFrameSource.shared.start(windowID: windowID)
+        LiveVideoFrameSource.shared.viewModel = timerViewModel(id: timerID)
+        LiveVideoFrameSource.shared.start()
         isBroadcasting = true
     }
 
