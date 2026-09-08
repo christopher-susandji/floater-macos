@@ -115,21 +115,26 @@ floating panel with transparency.
       Prompt appears on first launch; needs a manual run to verify.
 
 ### Phase 2 — Produce frames
-- [x] Build a `FrameSource`/`BroadcastTimerView` that renders the active timer offscreen
-      into a `CVPixelBuffer` pool. (`App/LiveVideoFrameSource.swift` + `Timer/BroadcastTimerView.swift`.)
-- [x] Drive it from the existing `TimerEngine`/`TimerViewModel` state (tick 30fps, redraw on
-      change). (`LiveVideoFrameSource` renders `BroadcastTimerView(viewModel:)` each tick via `ImageRenderer`.)
+- [x] Capture the **real timer NSPanel** window via ScreenCaptureKit (`SCStream` on the panel's
+      `CGWindowID`) and stream those frames — shows exactly what the floating panel shows.
+      (`App/LiveVideoFrameSource.swift`; replaced the earlier offscreen `ImageRenderer` plan.)
+- [x] Drive it from the existing `TimerEngine`/`TimerViewModel` state — the panel itself is
+      the source, so no separate render loop is needed. Frames arrive via `SCStreamOutput`.
 - [x] Feed frames into the extension via the chosen transport. (Host enqueues into the extension's sink stream via `CMIOStreamCopyBufferQueue`; extension forwards sink→source.)
 - [x] Ensure the camera outputs black/placeholder frames when no timer is broadcasting.
-      (Extension renders the placeholder when `sinkActive == false`; host renders "Floater" when `viewModel == nil`.)
+      (Extension renders the placeholder when `sinkActive == false`.)
 
 ### Phase 3 — UX & lifecycle
 - [x] Add an on/off "Live Video" control (menu command / App Intent / timer context menu).
       Added a per-timer camera/video toggle button in `TimerListCell`.
 - [x] Let the user choose *which* timer to broadcast (single active source).
-      (`AppViewModel.broadcastTimerID` + `startBroadcast`/`stopBroadcast`.)
+      (`AppViewModel.broadcastTimerID` + `startBroadcast`/`stopBroadcast`, captures that
+      timer's panel window via `FloatingTimerManager.windowID(for:)`.)
 - [ ] Handle timer finished / reset / edit while broadcasting.
 - [ ] Graceful teardown: stop stream, deactivate or idle the extension, survive app quit.
+- [ ] Permissions: app requests Camera + Screen Recording on first broadcast (`NSCameraUsageDescription`
+      in Info.plist, `com.apple.security.device.camera` + `com.apple.security.device.screen-recording`
+      entitlements).
 
 ### Phase 4 — Polish & validation
 - [ ] Test in Keynote fullscreen + windowed + presenter display.

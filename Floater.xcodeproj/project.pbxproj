@@ -6,12 +6,50 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D21CB01430ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = D21CB00030ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D21CB00D30ABC0DE00F10A75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2006E4E301744900097A75A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D21CB00630ABC0DE00F10A75;
+			remoteInfo = FloaterCamera;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D21CB01330ABC0DE00F10A75 /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				D21CB01430ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		D2006E56301744900097A75A /* Floater.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Floater.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Floater-Info.plist"; sourceTree = "<group>"; };
-		D21CB00030ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "me.christophersusandji.Floater.FloaterCamera.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D21CB00030ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = me.christophersusandji.Floater.FloaterCamera.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		D21CB00130ABC0DE00F10A75 /* Floater.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Floater.entitlements; sourceTree = "<group>"; };
+		D2FFC734302B7ACE00D45F01 /* Floater-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Floater-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D21CB01530ABC0DE00F10A75 /* Exceptions for "FloaterCamera" folder in "FloaterCamera" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D21CB00630ABC0DE00F10A75 /* FloaterCamera */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D2006E58301744900097A75A /* FloatingTimer */ = {
@@ -28,16 +66,6 @@
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D21CB01530ABC0DE00F10A75 /* Exceptions for "FloaterCamera" folder in "FloaterCamera" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = D21CB00630ABC0DE00F10A75 /* FloaterCamera */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D2006E53301744900097A75A /* Frameworks */ = {
@@ -198,34 +226,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXBuildFile section */
-		D21CB01430ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = D21CB00030ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-/* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		D21CB00D30ABC0DE00F10A75 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D2006E4E301744900097A75A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D21CB00630ABC0DE00F10A75;
-			remoteInfo = FloaterCamera;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		D21CB01330ABC0DE00F10A75 /* Embed System Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
-			dstSubfolderSpec = 16;
-			files = (
-				D21CB01430ABC0DE00F10A75 /* me.christophersusandji.Floater.FloaterCamera.systemextension in Embed System Extensions */,
-			);
-			name = "Embed System Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXTargetDependency section */
 		D21CB00F30ABC0DE00F10A75 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -361,8 +361,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = Floater;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Floater.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YMBQH9QU3B;
@@ -400,8 +400,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = Floater;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Floater.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YMBQH9QU3B;

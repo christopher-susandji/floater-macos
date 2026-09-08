@@ -107,6 +107,12 @@ class FloatingTimerManager: NSObject {
         panelDelegates.removeValue(forKey: id)
         slots.removeValue(forKey: id)
     }
+
+    /// The CGWindowID of the timer's floating panel, used to capture the panel
+    /// as the live-video source.
+    func windowID(for id: UUID) -> CGWindowID? {
+        panels[id].map { CGWindowID($0.windowNumber) }
+    }
     
     /// Brings the given timer's floating panel to the front, without stealing key focus
     /// away from the main app window any more than necessary.

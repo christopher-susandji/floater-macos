@@ -9,16 +9,19 @@ import SwiftUI
 import AVFoundation
 import CoreMediaIO
 import CoreGraphics
+import ScreenCaptureKit
+import os.log
 
-/// Drives Floater's virtual camera by rendering the active timer and pushing
-/// frames into the camera extension's sink stream. The extension forwards them
-/// out through its source stream to consumers like Keynote.
+/// Drives Floater's virtual camera by capturing the timer's floating panel
+/// window and pushing those frames into the camera extension's sink stream.
+/// The extension forwards them out through its source stream to consumers
+/// like Keynote.
 ///
 /// Transport is the "sink stream" pattern (see `ldenoue/cameraextension`): the
 /// host app opens the extension's sink `CMIOStream` and enqueues frames; no XPC
 /// shared-memory plumbing is required.
 @MainActor
-final class LiveVideoFrameSource {
+final class LiveVideoFrameSource: NSObject, SCStreamOutput, SCStreamDelegate {
 
     /// Must match `FloaterCamera/Config.swift` in the extension target.
     enum Constants {
@@ -35,43 +38,33 @@ final class LiveVideoFrameSource {
     private var deviceID: CMIODeviceID?
 
     private var videoDescription: CMFormatDescription!
-    private var bufferPool: CVPixelBufferPool!
-    private var bufferAuxAttributes: NSDictionary!
 
-    private var renderTimer: Timer?
-    private var readyToEnqueue = true
+    private var scStream: SCStream?
+    private let captureQueue = DispatchQueue(label: "floater.capture", qos: .userInteractive)
 
-    /// The timer whose rendered view is broadcast. Set before calling `start()`.
-    var viewModel: TimerViewModel?
-
-    /// Render target size; must match the extension's format (1280x720).
-    private let outputSize = CGSize(width: CGFloat(Constants.width), height: CGFloat(Constants.height))
-
-    private init() {}
+    private override init() { super.init() }
 
     // - MARK: Public API
 
-    func start() {
+    /// Begins capturing `windowID` and streaming it into the virtual camera.
+    func start(windowID: CGWindowID) {
         configureFormat()
         Task { @MainActor in
-            let granted = await AVCaptureDevice.requestAccess(for: .video)
-            guard granted else { return }
+            _ = await AVCaptureDevice.requestAccess(for: .video)
             connectToSinkStream()
-            startRenderTimer()
+            await startWindowCapture(windowID: windowID)
         }
     }
 
     func stop() {
-        renderTimer?.invalidate()
-        renderTimer = nil
+        scStream?.stopCapture { _ in }
+        scStream = nil
+        if let deviceID, let sinkStream {
+            CMIODeviceStopStream(deviceID, sinkStream)
+        }
         sinkQueue = nil
         sinkStream = nil
         deviceID = nil
-        viewModel = nil
-    }
-
-    private func isRunning() -> Bool {
-        renderTimer != nil
     }
 
     // - MARK: Format setup
@@ -88,17 +81,6 @@ final class LiveVideoFrameSource {
             formatDescriptionOut: &description
         )
         videoDescription = description
-
-        var pool: CVPixelBufferPool?
-        let attrs: NSDictionary = [
-            kCVPixelBufferWidthKey: dims.width,
-            kCVPixelBufferHeightKey: dims.height,
-            kCVPixelBufferPixelFormatTypeKey: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferIOSurfacePropertiesKey: [:]
-        ]
-        CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, attrs, &pool)
-        bufferPool = pool
-        bufferAuxAttributes = [kCVPixelBufferPoolAllocationThresholdKey: 5]
     }
 
     // - MARK: Discovery
@@ -204,15 +186,7 @@ final class LiveVideoFrameSource {
         self.sinkStream = sinkStream
 
         let pointer = UnsafeMutablePointer<Unmanaged<CMSimpleQueue>?>.allocate(capacity: 1)
-        let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-        let status = CMIOStreamCopyBufferQueue(sinkStream, { _, _, refcon in
-            guard let refcon else { return }
-            let source = Unmanaged<LiveVideoFrameSource>.fromOpaque(refcon).takeUnretainedValue()
-            Task { @MainActor in
-                source.readyToEnqueue = true
-            }
-        }, refcon, pointer)
-
+        let status = CMIOStreamCopyBufferQueue(sinkStream, nil, nil, pointer)
         if status == noErr, let queue = pointer.pointee {
             self.sinkQueue = queue.takeUnretainedValue()
             _ = CMIODeviceStartStream(deviceID, sinkStream)
@@ -220,61 +194,58 @@ final class LiveVideoFrameSource {
         pointer.deallocate()
     }
 
-    // - MARK: Rendering
+    // - MARK: Window capture (ScreenCaptureKit)
 
-    private func startRenderTimer() {
-        renderTimer?.invalidate()
-        renderTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / Double(Constants.frameRate), repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.renderTick()
+    private func startWindowCapture(windowID: CGWindowID) async {
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+            guard let scWindow = content.windows.first(where: { $0.windowID == windowID }) else {
+                os_log(.error, "Floater camera: could not find window %d in shareable content", windowID)
+                return
             }
+
+            let filter = SCContentFilter(desktopIndependentWindow: scWindow)
+            let config = SCStreamConfiguration()
+            config.width = Int(Constants.width)
+            config.height = Int(Constants.height)
+            config.pixelFormat = kCVPixelFormatType_32BGRA
+            config.minimumFrameInterval = CMTime(value: 1, timescale: Int32(Constants.frameRate))
+            config.showsCursor = false
+            config.capturesAudio = false
+
+            let stream = SCStream(filter: filter, configuration: config, delegate: self)
+            try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: captureQueue)
+            try await stream.startCapture()
+            scStream = stream
+            os_log(.info, "Floater camera: capturing window %d", windowID)
+        } catch {
+            os_log(.error, "Floater camera: failed to start window capture: %@", error.localizedDescription)
         }
     }
 
-    private func renderTick() {
-        guard readyToEnqueue, let sinkQueue else { return }
-        guard CMSimpleQueueGetCount(sinkQueue) < CMSimpleQueueGetCapacity(sinkQueue) else {
-            readyToEnqueue = false
-            return
+    // - MARK: SCStreamOutput
+
+    nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of outputType: SCStreamOutputType) {
+        guard outputType == .screen,
+              let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        Task { @MainActor in
+            self.enqueue(imageBuffer)
         }
-        guard let cgImage = renderCurrentFrame() else { return }
+    }
 
-        readyToEnqueue = false
-
-        var pixelBuffer: CVPixelBuffer?
-        let err = CVPixelBufferPoolCreatePixelBufferWithAuxAttributes(kCFAllocatorDefault, bufferPool, bufferAuxAttributes, &pixelBuffer)
-        guard err == kCVReturnSuccess, let pixelBuffer else { return }
-
-        CVPixelBufferLockBaseAddress(pixelBuffer, [])
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
-
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-
-        if let context = CGContext(
-            data: CVPixelBufferGetBaseAddress(pixelBuffer),
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
-            space: colorSpace,
-            bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
-        ) {
-            context.interpolationQuality = .low
-            context.clear(CGRect(x: 0, y: 0, width: width, height: height))
-            // Fill solid black so the timer bakes onto an opaque background.
-            context.setFillColor(CGColor(gray: 0, alpha: 1))
-            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        }
+    @MainActor
+    private func enqueue(_ imageBuffer: CVPixelBuffer) {
+        guard let sinkQueue else { return }
+        guard CMSimpleQueueGetCount(sinkQueue) < CMSimpleQueueGetCapacity(sinkQueue) else { return }
+        guard let videoDescription else { return }
 
         var sampleBuffer: CMSampleBuffer?
         var timingInfo = CMSampleTimingInfo()
         timingInfo.presentationTimeStamp = CMClockGetTime(CMClockGetHostTimeClock())
         let createStatus = CMSampleBufferCreateForImageBuffer(
             allocator: kCFAllocatorDefault,
-            imageBuffer: pixelBuffer,
+            imageBuffer: imageBuffer,
             dataReady: true,
             makeDataReadyCallback: nil,
             refcon: nil,
@@ -286,29 +257,5 @@ final class LiveVideoFrameSource {
             let retainedPointer = UnsafeMutableRawPointer(Unmanaged.passRetained(sampleBuffer).toOpaque())
             CMSimpleQueueEnqueue(sinkQueue, element: retainedPointer)
         }
-    }
-
-    /// Rasterizes the active timer's view (or a placeholder) into a `CGImage`.
-    private func renderCurrentFrame() -> CGImage? {
-        let rootView: AnyView
-        if let viewModel {
-            rootView = AnyView(
-                BroadcastTimerView(viewModel: viewModel)
-                    .frame(width: outputSize.width, height: outputSize.height)
-            )
-        } else {
-            rootView = AnyView(
-                Text("Floater")
-                    .font(.system(size: 120, weight: .heavy))
-                    .foregroundStyle(.white)
-                    .frame(width: outputSize.width, height: outputSize.height)
-                    .background(Color.black)
-            )
-        }
-
-        let renderer = ImageRenderer(content: rootView)
-        renderer.proposedSize = ProposedViewSize(outputSize)
-        renderer.scale = 1.0
-        return renderer.cgImage
     }
 }
