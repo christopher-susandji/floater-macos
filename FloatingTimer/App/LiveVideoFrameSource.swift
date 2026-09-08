@@ -53,8 +53,12 @@ final class LiveVideoFrameSource {
 
     func start() {
         configureFormat()
-        connectToSinkStream()
-        startRenderTimer()
+        Task { @MainActor in
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            guard granted else { return }
+            connectToSinkStream()
+            startRenderTimer()
+        }
     }
 
     func stop() {
