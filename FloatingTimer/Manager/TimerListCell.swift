@@ -36,6 +36,20 @@ struct TimerListCell: View {
                     .buttonStyle(.plain)
                     .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
 
+                    if isBroadcasting {
+                        ColorPicker(
+                            "Background",
+                            selection: Binding(
+                                get: { appViewModel.broadcastBackgroundColor },
+                                set: { appViewModel.broadcastBackgroundColor = $0 }
+                            ),
+                            supportsOpacity: false
+                        )
+                        .labelsHidden()
+                        .controlSize(.mini)
+                        .help("Broadcast background color")
+                    }
+
                     TextField("", text: $viewModel.title)
                     .overlay(alignment: .leading) {
                         if viewModel.title.isEmpty {
@@ -88,6 +102,11 @@ struct TimerListCell: View {
         }
         .padding(Sizing.xs)
         .contentShape(Rectangle())
+        .onChange(of: appViewModel.broadcastBackgroundColor) { _, newValue in
+            if isBroadcasting {
+                LiveVideoFrameSource.shared.backgroundColor = newValue
+            }
+        }
         .onTapGesture {
             isTitleFocused = false
         }

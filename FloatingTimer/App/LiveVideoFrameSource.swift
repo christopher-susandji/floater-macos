@@ -50,6 +50,11 @@ final class LiveVideoFrameSource {
     /// The timer whose rendered view is broadcast. Set before calling `start()`.
     var viewModel: TimerViewModel?
 
+    /// The solid color painted behind the timer in the outgoing frame. The
+    /// camera can't carry transparency, so this is the slide-facing backdrop.
+    /// Defaults to black.
+    var backgroundColor: Color = .black
+
     private init() {}
 
     // - MARK: Public API
@@ -260,8 +265,9 @@ final class LiveVideoFrameSource {
         ) {
             context.interpolationQuality = .high
             context.clear(CGRect(x: 0, y: 0, width: width, height: height))
-            // Fill solid black so the timer bakes onto an opaque background.
-            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            // Fill the configured solid background so the timer bakes onto an
+            // opaque backdrop (the camera feed carries no transparency).
+            context.setFillColor(backgroundColor.cgColor)
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
             // Center the square timer image (aspect-fit) in the 16:9 frame.
@@ -318,5 +324,12 @@ final class LiveVideoFrameSource {
         renderer.proposedSize = ProposedViewSize(width: panelSize, height: panelSize)
         renderer.scale = scaledSize / panelSize
         return renderer.cgImage
+    }
+}
+
+private extension Color {
+    /// The `CGColor` used to paint the broadcast backdrop (opaque RGB).
+    var cgColor: CGColor {
+        NSColor(self).usingColorSpace(.deviceRGB)?.cgColor ?? NSColor.black.cgColor
     }
 }
