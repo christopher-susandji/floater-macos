@@ -38,6 +38,10 @@ final class CameraExtensionManager: NSObject {
     /// this state in the UI instead of silently doing nothing on a re-click.
     private(set) var isAwaitingApproval: Bool = false
 
+    /// The last system-extension request failure, shown in Settings so failures
+    /// (e.g. the app not being installed in /Applications) aren't silent.
+    private(set) var lastError: String?
+
     override private init() {
         super.init()
         refreshInstalledState()
@@ -115,18 +119,8 @@ final class CameraExtensionManager: NSObject {
 
     /// Activates the camera extension, presenting the system approval prompt.
     func install() {
+        lastError = nil
         let request = OSSystemExtensionRequest.activationRequest(
-            forExtensionWithIdentifier: extensionIdentifier,
-            queue: .main
-        )
-        request.delegate = self
-        pendingRequest = request
-        OSSystemExtensionManager.shared.submitRequest(request)
-    }
-
-    /// Deactivates the camera extension.
-    func uninstall() {
-        let request = OSSystemExtensionRequest.deactivationRequest(
             forExtensionWithIdentifier: extensionIdentifier,
             queue: .main
         )
@@ -148,12 +142,14 @@ extension CameraExtensionManager: OSSystemExtensionRequestDelegate {
     func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
         pendingRequest = nil
         isAwaitingApproval = false
+        lastError = nil
         refreshInstalledState()
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         pendingRequest = nil
         isAwaitingApproval = false
+        lastError = error.localizedDescription
         refreshInstalledState()
     }
 }

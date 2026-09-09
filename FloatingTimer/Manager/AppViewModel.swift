@@ -19,12 +19,29 @@ final class AppViewModel {
 
     var timerViewModels: [TimerViewModel] = []
 
+    init() {
+        self.isCameraInputEnabled = UserDefaults.standard.object(forKey: Keys.cameraInputEnabled) as? Bool ?? true
+    }
+
     /// The timer currently selected for live-video broadcast. `nil` means
     /// `LiveVideoFrameSource` renders its placeholder.
     var broadcastTimerID: UUID?
 
     /// Whether the live-video source is actively pushing frames into the camera.
     var isBroadcasting: Bool = false
+
+    /// Whether the video-source (camera) button is shown on each timer. This is
+    /// separate from the extension actually being installed — it just hides the
+    /// UI affordance when the user doesn't want to see it. Defaults to true so
+    /// an installed extension shows the button without extra setup.
+    var isCameraInputEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isCameraInputEnabled, forKey: Keys.cameraInputEnabled)
+            if !isCameraInputEnabled && isBroadcasting {
+                stopBroadcast()
+            }
+        }
+    }
 
     /// The solid backdrop color painted behind the timer in the live-video
     /// feed (persisted across launches). Defaults to black.
@@ -48,6 +65,7 @@ final class AppViewModel {
 
     private enum Keys {
         static let broadcastBackground = "broadcastBackgroundColor"
+        static let cameraInputEnabled = "cameraInputEnabled"
     }
 
     var canCreateTimer: Bool {

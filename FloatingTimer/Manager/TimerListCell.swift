@@ -23,7 +23,7 @@ struct TimerListCell: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: Sizing.xxs) {
                 HStack(spacing: Sizing.xs) {
-                    if cameraExtensionManager.isInstalled {
+                    if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
                         Button {
                             if isBroadcasting {
                                 appViewModel.stopBroadcast()
