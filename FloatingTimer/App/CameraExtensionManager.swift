@@ -21,6 +21,7 @@ final class CameraExtensionManager: NSObject {
     static let shared = CameraExtensionManager()
 
     private var pendingRequest: OSSystemExtensionRequest?
+    private var refreshTimer: Timer?
 
     /// The bundle identifier of the camera extension target. Must match the
     /// extension's CFBundleIdentifier.
@@ -52,10 +53,37 @@ final class CameraExtensionManager: NSObject {
             name: AVCaptureDevice.wasDisconnectedNotification,
             object: nil
         )
+        // Re-check when the app comes to the foreground (e.g. after the user
+        // approves in System Settings), since the activation completes outside
+        // this process and may not deliver a device-connect notification.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(deviceListChanged),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        startRefreshTimerIfNeeded()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    /// Polls for the camera while it isn't installed, so the toggle flips on
+    /// right after the extension activates — even if no system notification
+    /// reaches this process. Stops itself once installed.
+    private func startRefreshTimerIfNeeded() {
+        guard refreshTimer == nil, !isInstalled else { return }
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.refreshInstalledState()
+                if self.isInstalled {
+                    self.refreshTimer?.invalidate()
+                    self.refreshTimer = nil
+                }
+            }
+        }
     }
 
     /// Re-reads whether the Floater camera is present.
@@ -68,6 +96,8 @@ final class CameraExtensionManager: NSObject {
         isInstalled = session.devices.contains { $0.localizedName == "Floater" }
         if isInstalled {
             isAwaitingApproval = false
+            refreshTimer?.invalidate()
+            refreshTimer = nil
         }
     }
 
