@@ -11,6 +11,7 @@ import SwiftUI
 struct FloaterApp: App {
     @State private var appViewModel = AppViewModel.shared
     @NSApplicationDelegateAdaptor private var appDelegate: FloaterAppDelegate
+    @Environment(\.openSettings) private var openSettings
     
     var body: some Scene {
         WindowGroup("Floater") {
@@ -20,6 +21,7 @@ struct FloaterApp: App {
                 .frame(width: 300)
                 .onAppear {
                     NSWindow.allowsAutomaticWindowTabbing = false
+                    appDelegate.openSettingsAction = openSettings
                 }
         }
         .windowStyle(.hiddenTitleBar)

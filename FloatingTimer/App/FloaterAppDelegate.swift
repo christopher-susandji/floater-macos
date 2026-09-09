@@ -6,9 +6,11 @@
 //
 
 import AppKit
+import SwiftUI
 
 class FloaterAppDelegate: NSResponder, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
+    var openSettingsAction: OpenSettingsAction?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
@@ -39,10 +41,6 @@ class FloaterAppDelegate: NSResponder, NSApplicationDelegate {
 
     @objc private func openSettings() {
         NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14.0, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        }
+        openSettingsAction?()
     }
 }
