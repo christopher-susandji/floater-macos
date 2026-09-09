@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var cameraExtensionManager = CameraExtensionManager.shared
+    @State private var appViewModel = AppViewModel.shared
 
     var body: some View {
         Form {
@@ -45,6 +46,24 @@ struct SettingsView: View {
                     }
                     .padding(.top, 4)
                 }
+            }
+
+            Section {
+                ColorPicker(
+                    "Broadcast background",
+                    selection: Binding(
+                        get: { appViewModel.broadcastBackgroundColor },
+                        set: { appViewModel.broadcastBackgroundColor = $0 }
+                    ),
+                    supportsOpacity: false
+                )
+                Text("The solid backdrop painted behind a timer in the live-video feed.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } footer: {
+                Text("Changes apply to the next broadcast and to any timer currently broadcasting.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

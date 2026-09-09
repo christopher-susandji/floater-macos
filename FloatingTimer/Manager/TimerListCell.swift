@@ -10,6 +10,7 @@ import SwiftUI
 struct TimerListCell: View {
     @Bindable var viewModel: TimerViewModel
     @Environment(AppViewModel.self) private var appViewModel
+    @State private var cameraExtensionManager = CameraExtensionManager.shared
     var onDelete: (() -> Void)?
     @Namespace private var namespace
     @FocusState private var isTitleFocused: Bool
@@ -22,32 +23,20 @@ struct TimerListCell: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: Sizing.xxs) {
                 HStack(spacing: Sizing.xs) {
-                    Button {
-                        if isBroadcasting {
-                            appViewModel.stopBroadcast()
-                        } else {
-                            appViewModel.startBroadcast(timerID: viewModel.id)
+                    if cameraExtensionManager.isInstalled {
+                        Button {
+                            if isBroadcasting {
+                                appViewModel.stopBroadcast()
+                            } else {
+                                appViewModel.startBroadcast(timerID: viewModel.id)
+                            }
+                        } label: {
+                            Image(systemName: isBroadcasting ? "video.fill" : "video")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
                         }
-                    } label: {
-                        Image(systemName: isBroadcasting ? "video.fill" : "video")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
-                    }
-                    .buttonStyle(.plain)
-                    .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
-
-                    if isBroadcasting {
-                        ColorPicker(
-                            "Background",
-                            selection: Binding(
-                                get: { appViewModel.broadcastBackgroundColor },
-                                set: { appViewModel.broadcastBackgroundColor = $0 }
-                            ),
-                            supportsOpacity: false
-                        )
-                        .labelsHidden()
-                        .controlSize(.mini)
-                        .help("Broadcast background color")
+                        .buttonStyle(.plain)
+                        .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
                     }
 
                     TextField("", text: $viewModel.title)
@@ -102,11 +91,6 @@ struct TimerListCell: View {
         }
         .padding(Sizing.xs)
         .contentShape(Rectangle())
-        .onChange(of: appViewModel.broadcastBackgroundColor) { _, newValue in
-            if isBroadcasting {
-                LiveVideoFrameSource.shared.backgroundColor = newValue
-            }
-        }
         .onTapGesture {
             isTitleFocused = false
         }

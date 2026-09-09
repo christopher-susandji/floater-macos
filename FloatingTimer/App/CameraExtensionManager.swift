@@ -78,7 +78,7 @@ final class CameraExtensionManager: NSObject {
     /// Opens the macOS pane where the pending extension approval lives, so the
     /// user can click "Allow". No-op if the deep link can't be formed.
     func openSystemExtensionSettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?SystemExtensions")
+        let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")
         guard let url else { return }
         NSWorkspace.shared.open(url)
     }

@@ -40,6 +40,9 @@ final class AppViewModel {
             if let components = newValue.rgbComponents {
                 UserDefaults.standard.set(components, forKey: Keys.broadcastBackground)
             }
+            if isBroadcasting {
+                LiveVideoFrameSource.shared.backgroundColor = newValue
+            }
         }
     }
 
