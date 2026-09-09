@@ -9,6 +9,7 @@ import Foundation
 import SystemExtensions
 import AVFoundation
 import Observation
+import AppKit
 
 /// Manages the FloaterCamera system extension: activation, deactivation, and
 /// reflecting whether it's currently installed. Activation is user-initiated
@@ -29,6 +30,12 @@ final class CameraExtensionManager: NSObject {
     /// its "Floater" virtual camera is enumerable. Sandbox-safe (spawning
     /// `systemextensionsctl` isn't possible from an App Store app).
     private(set) var isInstalled: Bool = false
+
+    /// True while an activation request is queued and waiting for the user to
+    /// approve it in System Settings → Privacy & Security. macOS won't re-show
+    /// the approval prompt for a request that's already pending, so we surface
+    /// this state in the UI instead of silently doing nothing on a re-click.
+    private(set) var isAwaitingApproval: Bool = false
 
     override private init() {
         super.init()
@@ -59,10 +66,21 @@ final class CameraExtensionManager: NSObject {
             position: .unspecified
         )
         isInstalled = session.devices.contains { $0.localizedName == "Floater" }
+        if isInstalled {
+            isAwaitingApproval = false
+        }
     }
 
     @objc private func deviceListChanged() {
         refreshInstalledState()
+    }
+
+    /// Opens the macOS pane where the pending extension approval lives, so the
+    /// user can click "Allow". No-op if the deep link can't be formed.
+    func openSystemExtensionSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?SystemExtensions")
+        guard let url else { return }
+        NSWorkspace.shared.open(url)
     }
 
     /// Activates the camera extension, presenting the system approval prompt.
@@ -93,15 +111,19 @@ extension CameraExtensionManager: OSSystemExtensionRequestDelegate {
         .replace
     }
 
-    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {}
+    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
+        isAwaitingApproval = true
+    }
 
     func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
         pendingRequest = nil
+        isAwaitingApproval = false
         refreshInstalledState()
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         pendingRequest = nil
+        isAwaitingApproval = false
         refreshInstalledState()
     }
 }

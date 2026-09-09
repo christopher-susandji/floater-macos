@@ -379,33 +379,35 @@ private extension Color {
 /// disconnects the camera or no timer is active.
 struct BroadcastPlaceholderView: View {
     /// The real app icon (the same image macOS renders in the Dock).
-    let icon: NSImage
+    let icon: NSImage?
 
     var body: some View {
         ZStack {
-            Color(white: 0.06)
-                .ignoresSafeArea()
+            Color.black
 
             RoundedRectangle(cornerRadius: 44)
-                .strokeBorder(Color(white: 0.35), style: StrokeStyle(lineWidth: 2, dash: [10, 8]))
+                .strokeBorder(Color(white: 0.5), style: StrokeStyle(lineWidth: 2, dash: [10, 8]))
                 .padding(34)
 
-            VStack(spacing: 24) {
-                Image(nsImage: icon)
+            VStack {
+                Image(nsImage: icon ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath))
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 180, height: 180)
-
-                Text("FLOATER")
-                    .font(.system(size: 56, weight: .heavy))
-                    .foregroundStyle(.white)
-
-                Text("No active timer selected as source.\nOpen Floater and select a timer.")
-                    .font(.system(size: 22))
+                    .saturation(0)
+                
+                Text("No active timer selected as source:\nOpen Floater and select a timer.")
+                    .font(.system(size: 24))
+                    .fontWidth(.expanded)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(white: 0.6))
+                    .foregroundStyle(Color(white: 0.8))
                     .lineSpacing(6)
             }
+            
         }
     }
+}
+
+#Preview {
+    BroadcastPlaceholderView(icon: nil)
 }

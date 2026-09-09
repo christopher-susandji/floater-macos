@@ -28,6 +28,23 @@ struct SettingsView: View {
                 Text("Installs Floater as a virtual camera so you can insert a timer into Keynote as a live video source.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if cameraExtensionManager.isAwaitingApproval {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.yellow)
+                            Text("Floater is waiting for your approval in System Settings. Approve it there, then this switch turns on automatically.")
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Button("Open System Settings…") {
+                            cameraExtensionManager.openSystemExtensionSettings()
+                        }
+                        .controlSize(.small)
+                    }
+                    .padding(.top, 4)
+                }
             }
         }
         .formStyle(.grouped)
