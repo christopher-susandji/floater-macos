@@ -18,7 +18,56 @@ final class AppViewModel {
     static let shared = AppViewModel()
 
     var timerViewModels: [TimerViewModel] = []
-    
+
+    init() {
+        self.isCameraInputEnabled = UserDefaults.standard.object(forKey: Keys.cameraInputEnabled) as? Bool ?? true
+    }
+
+    /// The timer currently selected for live-video broadcast. `nil` means
+    /// `LiveVideoFrameSource` renders its placeholder.
+    var broadcastTimerID: UUID?
+
+    /// Whether the live-video source is actively pushing frames into the camera.
+    var isBroadcasting: Bool = false
+
+    /// Whether the video-source (camera) button is shown on each timer. This is
+    /// separate from the extension actually being installed — it just hides the
+    /// UI affordance when the user doesn't want to see it. Defaults to true so
+    /// an installed extension shows the button without extra setup.
+    var isCameraInputEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isCameraInputEnabled, forKey: Keys.cameraInputEnabled)
+            if !isCameraInputEnabled && isBroadcasting {
+                stopBroadcast()
+            }
+        }
+    }
+
+    /// The solid backdrop color painted behind the timer in the live-video
+    /// feed (persisted across launches). Defaults to black.
+    var broadcastBackgroundColor: Color {
+        get {
+            let defaults = UserDefaults.standard
+            if let components = defaults.object(forKey: Keys.broadcastBackground) as? [Double], components.count == 3 {
+                return Color(red: components[0], green: components[1], blue: components[2])
+            }
+            return .black
+        }
+        set {
+            if let components = newValue.rgbComponents {
+                UserDefaults.standard.set(components, forKey: Keys.broadcastBackground)
+            }
+            if isBroadcasting {
+                LiveVideoFrameSource.shared.backgroundColor = newValue
+            }
+        }
+    }
+
+    private enum Keys {
+        static let broadcastBackground = "broadcastBackgroundColor"
+        static let cameraInputEnabled = "cameraInputEnabled"
+    }
+
     var canCreateTimer: Bool {
         timerViewModels.count < Self.maxTimerCount
     }
@@ -33,10 +82,40 @@ final class AppViewModel {
     }
 
     func removeTimer(id: UUID) {
+        if broadcastTimerID == id {
+            stopBroadcast()
+        }
         timerViewModels.removeAll { $0.id == id }
     }
 
     func timerViewModel(id: UUID) -> TimerViewModel? {
         timerViewModels.first { $0.id == id }
+    }
+
+    // - MARK: Live video broadcast
+
+    /// Starts (or restarts) broadcasting the given timer as a live-video source.
+    func startBroadcast(timerID: UUID) {
+        broadcastTimerID = timerID
+        LiveVideoFrameSource.shared.viewModel = timerViewModel(id: timerID)
+        LiveVideoFrameSource.shared.backgroundColor = broadcastBackgroundColor
+        LiveVideoFrameSource.shared.start()
+        isBroadcasting = true
+    }
+
+    /// Stops broadcasting and returns the camera to its placeholder output.
+    func stopBroadcast() {
+        LiveVideoFrameSource.shared.showPlaceholder()
+        broadcastTimerID = nil
+        isBroadcasting = false
+    }
+}
+
+private extension Color {
+    /// Linear RGB components `[red, green, blue]` in 0...1, or `nil` if the
+    /// color can't be resolved to device RGB.
+    var rgbComponents: [Double]? {
+        guard let rgb = NSColor(self).usingColorSpace(.deviceRGB) else { return nil }
+        return [Double(rgb.redComponent), Double(rgb.greenComponent), Double(rgb.blueComponent)]
     }
 }
