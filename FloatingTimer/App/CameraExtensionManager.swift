@@ -43,6 +43,10 @@ final class CameraExtensionManager: NSObject {
     /// (e.g. the app not being installed in /Applications) aren't silent.
     private(set) var lastError: String?
 
+    /// Set once the system confirms the extension activated, so `isInstalled`
+    /// doesn't flip back off when a device re-enumeration misses the camera.
+    private var confirmedInstalled = false
+
     override private init() {
         super.init()
         refreshInstalledState()
@@ -98,7 +102,7 @@ final class CameraExtensionManager: NSObject {
     /// AVFoundation after the user grants camera permission. CMIO enumeration
     /// needs no such permission — it's the same lookup the broadcast path uses.
     func refreshInstalledState() {
-        isInstalled = findFloaterCMIODeviceID() != nil
+        isInstalled = confirmedInstalled || (findFloaterCMIODeviceID() != nil)
         if isInstalled {
             isAwaitingApproval = false
             refreshTimer?.invalidate()
@@ -174,7 +178,12 @@ extension CameraExtensionManager: OSSystemExtensionRequestDelegate {
         pendingRequest = nil
         isAwaitingApproval = false
         lastError = nil
-        refreshInstalledState()
+        if result == .completed {
+            confirmedInstalled = true
+            isInstalled = true
+            refreshTimer?.invalidate()
+            refreshTimer = nil
+        }
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
