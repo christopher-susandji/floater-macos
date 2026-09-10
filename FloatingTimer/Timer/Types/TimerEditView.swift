@@ -91,7 +91,7 @@ struct TimerEditView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: Sizing.md) {
             header
             presetGrid
         }
@@ -116,22 +116,22 @@ struct TimerEditView: View {
                 isCustomizePresented.toggle()
             } label: {
                 Image(systemName: "paintbrush.pointed.fill")
+                    .frame(width: Sizing.lg, height: Sizing.lg)
             }
             .buttonStyle(.bordered)
             .buttonBorderShape(.roundedRectangle)
             .popover(isPresented: $isCustomizePresented, arrowEdge: .bottom) {
                 customizePanel
             }
-            .padding(.bottom, Sizing.sm)
             Button {
                 closeAction()
             } label: {
                 Image(systemName: "xmark")
                     .fontWeight(.bold)
+                    .frame(width: Sizing.lg, height: Sizing.lg)
             }
             .buttonStyle(.bordered)
             .buttonBorderShape(.roundedRectangle)
-            .padding(.bottom, Sizing.sm)
         }
     }
 
