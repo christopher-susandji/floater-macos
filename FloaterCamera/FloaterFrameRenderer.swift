@@ -6,7 +6,6 @@
 //
 
 import CoreGraphics
-import CoreImage
 import AppKit
 
 /// Draws the idle placeholder frame that the virtual camera outputs when no
@@ -44,47 +43,45 @@ enum FloaterFrameRenderer {
         let messageAttrs: [NSAttributedString.Key: Any] = [
             .font: messageFont,
             .foregroundColor: NSColor(white: 0.8, alpha: 1),
-            .paragraphStyle: paragraph
+            .paragraphStyle: paragraph,
+            .expansion: 0.5
         ]
         let messageSize = message.size(withAttributes: messageAttrs)
 
-        // Icon + message stack, vertically centered (matches BroadcastPlaceholderView).
+        // Icon + message stack, vertically centered (matches BroadcastPlaceholderView:
+        // icon on top, message below). CoreGraphics origin is bottom-left, so larger
+        // y is higher on the frame.
         let iconSide: CGFloat = 180
         let spacing: CGFloat = 8
         let stackHeight = iconSide + spacing + messageSize.height
-        let stackTop = (h - stackHeight) / 2
+        let stackBottom = (h - stackHeight) / 2
+        let stackTop = stackBottom + stackHeight
 
-        // Icon (grayscale, matches `.saturation(0)` in BroadcastPlaceholderView).
-        let iconRect = CGRect(x: (w - iconSide) / 2, y: stackTop, width: iconSide, height: iconSide)
-        if let grayscaleIcon = grayscaleAppIcon {
+        // Icon (full color, matches BroadcastPlaceholderView).
+        let iconRect = CGRect(x: (w - iconSide) / 2, y: stackTop - iconSide, width: iconSide, height: iconSide)
+        if let appIcon = bundledAppIcon {
             context.saveGState()
             context.interpolationQuality = .high
-            context.draw(grayscaleIcon, in: iconRect)
+            context.draw(appIcon, in: iconRect)
             context.restoreGState()
         } else {
-            drawIcon(in: context, center: CGPoint(x: w / 2, y: stackTop + iconSide / 2), radius: iconSide / 2)
+            drawIcon(in: context, center: CGPoint(x: w / 2, y: stackTop - iconSide / 2), radius: iconSide / 2)
         }
 
-        // Description.
+        // Description (below the icon).
         message.draw(
-            in: CGRect(x: (w - messageSize.width) / 2, y: stackTop + iconSide + spacing, width: messageSize.width, height: messageSize.height),
+            in: CGRect(x: (w - messageSize.width) / 2, y: stackBottom, width: messageSize.width, height: messageSize.height),
             withAttributes: messageAttrs
         )
     }
 
-    /// The real Floater app icon, desaturated to grayscale to match the host
-    /// placeholder. Cached: it's computed once and reused every frame.
-    private static let grayscaleAppIcon: CGImage? = {
+    /// The real Floater app icon (a flattened copy bundled with the extension),
+    /// or `nil` if the asset is missing — in which case we fall back to the
+    /// hand-drawn glyph. Cached: loaded once and reused every frame.
+    private static let bundledAppIcon: CGImage? = {
         guard let url = Bundle.main.url(forResource: "AppIcon", withExtension: "png"),
-              let image = NSImage(contentsOf: url),
-              let tiff = image.tiffRepresentation,
-              let ciImage = CIImage(data: tiff),
-              let filter = CIFilter(name: "CIColorControls") else { return nil }
-        filter.setValue(ciImage, forKey: kCIInputImageKey)
-        filter.setValue(0.0, forKey: kCIInputSaturationKey)
-        guard let output = filter.outputImage else { return nil }
-        let context = CIContext(options: nil)
-        return context.createCGImage(output, from: output.extent)
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }()
 
     /// Draws the Floater app icon as a timer glyph (a tick ring + hand), using

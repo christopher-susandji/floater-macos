@@ -394,7 +394,6 @@ struct BroadcastPlaceholderView: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 180, height: 180)
-                    .saturation(0)
                 
                 Text("No active timer selected as source:\nOpen Floater and select a timer.")
                     .font(.system(size: 24))
