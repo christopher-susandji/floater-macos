@@ -220,10 +220,7 @@ struct ContentView: View {
                     timerPicker
                 }
                 
-                VStack(spacing: Sizing.sm) {
-                    themePicker
-                    createTimerButton
-                }
+                createTimerButton
             }
             .font(.system(.title2, design: .rounded, weight: .semibold))
             .padding(.vertical, Sizing.sm)
