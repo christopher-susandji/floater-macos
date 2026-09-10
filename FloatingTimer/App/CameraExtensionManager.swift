@@ -8,6 +8,7 @@
 import Foundation
 import SystemExtensions
 import AVFoundation
+import CoreMediaIO
 import Observation
 import AppKit
 
@@ -91,18 +92,48 @@ final class CameraExtensionManager: NSObject {
     }
 
     /// Re-reads whether the Floater camera is present.
+    ///
+    /// Detection uses the lower-level CoreMediaIO (CMIO) API rather than
+    /// `AVCaptureDevice`, because a sandboxed app only sees cameras through
+    /// AVFoundation after the user grants camera permission. CMIO enumeration
+    /// needs no such permission — it's the same lookup the broadcast path uses.
     func refreshInstalledState() {
-        let session = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.external],
-            mediaType: .video,
-            position: .unspecified
-        )
-        isInstalled = session.devices.contains { $0.localizedName == "Floater" }
+        isInstalled = findFloaterCMIODeviceID() != nil
         if isInstalled {
             isAwaitingApproval = false
             refreshTimer?.invalidate()
             refreshTimer = nil
         }
+    }
+
+    /// Enumerates CMIO devices and returns the Floater virtual camera's object
+    /// ID if present, otherwise `nil`.
+    private func findFloaterCMIODeviceID() -> CMIODeviceID? {
+        var dataSize: UInt32 = 0
+        var dataUsed: UInt32 = 0
+        var opa = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain)
+        )
+        CMIOObjectGetPropertyDataSize(CMIOObjectID(kCMIOObjectSystemObject), &opa, 0, nil, &dataSize)
+        let count = Int(dataSize) / MemoryLayout<CMIOObjectID>.size
+        guard count > 0 else { return nil }
+        var devices = [CMIOObjectID](repeating: 0, count: count)
+        CMIOObjectGetPropertyData(CMIOObjectID(kCMIOObjectSystemObject), &opa, 0, nil, dataSize, &dataUsed, &devices)
+
+        for deviceObjectID in devices {
+            opa.mSelector = CMIOObjectPropertySelector(0x6C6E616D) // 'lnam' = kCMIODevicePropertyLocalizedName
+            CMIOObjectGetPropertyDataSize(deviceObjectID, &opa, 0, nil, &dataSize)
+            let namePtr = UnsafeMutablePointer<Unmanaged<CFString>?>.allocate(capacity: 1)
+            defer { namePtr.deallocate() }
+            CMIOObjectGetPropertyData(deviceObjectID, &opa, 0, nil, dataSize, &dataUsed, namePtr)
+            let name = namePtr.pointee?.takeUnretainedValue() as String? ?? ""
+            if name == "Floater" {
+                return deviceObjectID
+            }
+        }
+        return nil
     }
 
     @objc private func deviceListChanged() {
