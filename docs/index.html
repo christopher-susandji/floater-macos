@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floater - Support</title>
+<style>
+  :root {
+    --bg: #111319;
+    --bg-2: #1b1715;
+    --accent: #ff8d28;
+    --gold: #d5a24a;
+    --text: #f2e6c7;
+    --muted: #b9b2a3;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(120% 120% at 50% 0%, #23262e 0%, var(--bg) 55%, #0b0c10 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 48px 20px;
+  }
+  .card {
+    max-width: 720px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  .badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(255, 141, 40, 0.35);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 32px 0 10px; color: var(--gold); }
+  .lede { color: var(--muted); margin: 0; font-size: 16px; }
+  .updated { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  p, li { font-size: 15px; }
+  ul, ol { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .button {
+    display: inline-block;
+    background: linear-gradient(180deg, #ff9d43, #ff8d28);
+    color: #2a1600;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 12px;
+    margin-top: 4px;
+  }
+  .button:hover { text-decoration: none; filter: brightness(1.05); }
+  code {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 13px;
+  }
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <header>
+    <div class="badge">Floater</div>
+    <h1>Support</h1>
+    <p class="lede">Floating, always-on-top timers for macOS.</p>
+  </header>
+
+  <section>
+    <h2>Get help</h2>
+    <p>Found a bug, have a question, or want to request a feature? Open an issue on GitHub and we'll get back to you.</p>
+    <p><a class="button" href="https://github.com/christopher-susandji/floater-macos/issues">Open an issue</a></p>
+  </section>
+
+  <section>
+    <h2>Requirements</h2>
+    <ul>
+      <li>macOS 26.5 or later.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Using Floater</h2>
+    <ul>
+      <li>Enter a title and a time, then choose <strong>Create Timer</strong>.</li>
+      <li>Each timer opens as a floating panel that stays above your other windows.</li>
+      <li>Run up to five timers at once, each with its own title and duration.</li>
+      <li>Pick a Classic or Vintage look, and choose a chime for when time is up.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Using a timer in Keynote</h2>
+    <ol>
+      <li>Open Floater Settings and enable <strong>Floater as Camera Input</strong>.</li>
+      <li>In Keynote, choose <strong>Insert &gt; Live Video</strong>.</li>
+      <li>Select <strong>Floater</strong> from the list of cameras.</li>
+    </ol>
+    <p>Tip: set the broadcast background color in Settings to match your slide.</p>
+  </section>
+
+  <footer>
+    <a href="privacy/">Privacy Policy</a>
+    <span>&middot;</span>
+    <a href="https://github.com/christopher-susandji/floater-macos/issues">Report an issue</a>
+  </footer>
+</main>
+</body>
+</html>
