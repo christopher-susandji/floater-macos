@@ -40,7 +40,6 @@ enum ChimeCatalog {
         ChimeOption(id: "minimal-cinematic.mp3", name: "Minimal", isSelected: false, onSelect: {}),
         ChimeOption(id: "gentle-ding.mp3", name: "Gentle Ding", isSelected: false, onSelect: {}),
         ChimeOption(id: "guitar-strum.mp3", name: "Guitar", isSelected: false, onSelect: {}),
-        ChimeOption(id: "odyssey-bow.m4a", name: "Odyssey Bow", isSelected: false, onSelect: {}),
         ChimeOption(id: "train-horn.mp3", name: "Train Horn", isSelected: false, onSelect: {}),
     ]
 }
