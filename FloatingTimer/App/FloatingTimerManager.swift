@@ -80,6 +80,7 @@ class FloatingTimerManager: NSObject {
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.hidesOnDeactivate = false
+        panel.isMovable = true
         panel.isMovableByWindowBackground = true
         panel.isOpaque = false
         panel.hasShadow = true

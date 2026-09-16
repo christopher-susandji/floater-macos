@@ -37,6 +37,7 @@ struct TimerView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
+        .gesture(WindowDragGesture())
         .onChange(of: viewModel.editRequestToken) { _, newValue in
             withAnimation(.easeInOut(duration: 0.15)) {
                 editMode = newValue > 0
