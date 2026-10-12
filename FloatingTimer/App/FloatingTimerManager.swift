@@ -65,9 +65,12 @@ class FloatingTimerManager: NSObject {
     }
 
     /// Keeps a remembered origin on-screen, e.g. after a display change, so a
-    /// new timer can't spawn somewhere the user can't reach it.
+    /// new timer can't spawn somewhere the user can't reach it. The point is
+    /// clamped to the display it was placed on, not the main window's screen,
+    /// so a timer dragged to a secondary display stays there.
     private func sanitizedOrigin(_ origin: NSPoint) -> NSPoint {
-        let screenFrame = targetScreen.visibleFrame
+        let screen = NSScreen.screens.first { $0.frame.contains(origin) } ?? targetScreen
+        let screenFrame = screen.visibleFrame
         let maxX = screenFrame.maxX - panelSize.width
         let maxY = screenFrame.maxY - panelSize.height
         return NSPoint(
