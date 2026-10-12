@@ -14,6 +14,13 @@ class FloatingTimerManager: NSObject {
     private var panels: [UUID: NSPanel] = [:]
     private var panelDelegates: [UUID: PanelDelegate] = [:]
     private var slots: [UUID: Int] = [:]
+
+    /// Origin of the most recently active timer panel (the last one created,
+    /// focused or dragged). New timers spawn here so they reuse the spot the
+    /// user last placed a timer in. Kept in memory for the session only, and
+    /// survives the active panel being closed so the next timer still lands
+    /// where the previous one was.
+    private var lastActiveOrigin: NSPoint?
     
     private let panelSize = NSSize(width: 220, height: 220)
     private let gridSpacing: CGFloat = 16
@@ -56,6 +63,21 @@ class FloatingTimerManager: NSObject {
         
         return NSPoint(x: x, y: originY)
     }
+
+    /// Keeps a remembered origin on-screen, e.g. after a display change, so a
+    /// new timer can't spawn somewhere the user can't reach it. The point is
+    /// clamped to the display it was placed on, not the main window's screen,
+    /// so a timer dragged to a secondary display stays there.
+    private func sanitizedOrigin(_ origin: NSPoint) -> NSPoint {
+        let screen = NSScreen.screens.first { $0.frame.contains(origin) } ?? targetScreen
+        let screenFrame = screen.visibleFrame
+        let maxX = screenFrame.maxX - panelSize.width
+        let maxY = screenFrame.maxY - panelSize.height
+        return NSPoint(
+            x: min(max(origin.x, screenFrame.minX), maxX),
+            y: min(max(origin.y, screenFrame.minY), maxY)
+        )
+    }
     
     func showTimer(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
         let timerView = TimerView(viewModel: viewModel) { [weak self] in
@@ -88,13 +110,23 @@ class FloatingTimerManager: NSObject {
         
         let slot = nextAvailableSlot()
         slots[viewModel.id] = slot
-        panel.setFrameOrigin(frameOrigin(forSlot: slot))
-        
-        let panelDelegate = PanelDelegate { [weak self] in
-            self?.panels.removeValue(forKey: viewModel.id)
-            self?.panelDelegates.removeValue(forKey: viewModel.id)
-            self?.slots.removeValue(forKey: viewModel.id)
-        }
+
+        // Reuse the spot the last active timer occupied; fall back to the grid
+        // when no timer has been placed yet this session.
+        let origin = lastActiveOrigin.map(sanitizedOrigin) ?? frameOrigin(forSlot: slot)
+        panel.setFrameOrigin(origin)
+        lastActiveOrigin = origin
+
+        let panelDelegate = PanelDelegate(
+            onClose: { [weak self] in
+                self?.panels.removeValue(forKey: viewModel.id)
+                self?.panelDelegates.removeValue(forKey: viewModel.id)
+                self?.slots.removeValue(forKey: viewModel.id)
+            },
+            onMove: { [weak self] origin in
+                self?.lastActiveOrigin = origin
+            }
+        )
         panel.delegate = panelDelegate
         
         panels[viewModel.id] = panel
@@ -112,18 +144,29 @@ class FloatingTimerManager: NSObject {
     /// Brings the given timer's floating panel to the front, without stealing key focus
     /// away from the main app window any more than necessary.
     func focusTimer(_ id: UUID) {
-        panels[id]?.makeKeyAndOrderFront(nil)
+        guard let panel = panels[id] else { return }
+        // Focusing a timer makes it the active one, so its spot becomes the one
+        // the next timer will reuse.
+        lastActiveOrigin = panel.frame.origin
+        panel.makeKeyAndOrderFront(nil)
     }
 }
 
 class PanelDelegate: NSObject, NSWindowDelegate {
     private let onClose: () -> Void
+    private let onMove: (NSPoint) -> Void
     
-    init(onClose: @escaping () -> Void) {
+    init(onClose: @escaping () -> Void, onMove: @escaping (NSPoint) -> Void) {
         self.onClose = onClose
+        self.onMove = onMove
     }
     
     func windowWillClose(_ notification: Notification) {
         onClose()
+    }
+    
+    func windowDidMove(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        onMove(window.frame.origin)
     }
 }
