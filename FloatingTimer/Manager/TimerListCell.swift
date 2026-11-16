@@ -20,48 +20,48 @@ struct TimerListCell: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Sizing.xs) {
             HStack(spacing: Sizing.xs) {
-                    if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
-                        Button {
-                            if isBroadcasting {
-                                appViewModel.stopBroadcast()
-                            } else {
-                                appViewModel.startBroadcast(timerID: viewModel.id)
-                            }
-                        } label: {
-                            Image(systemName: isBroadcasting ? "video.fill" : "video")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
+                if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
+                    Button {
+                        if isBroadcasting {
+                            appViewModel.stopBroadcast()
+                        } else {
+                            appViewModel.startBroadcast(timerID: viewModel.id)
                         }
-                        .buttonStyle(.plain)
-                        .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
+                    } label: {
+                        Image(systemName: isBroadcasting ? "video.fill" : "video")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
                     }
-                    
-                    TextField("", text: $viewModel.title)
-                        .overlay(alignment: .leading) {
-                            if viewModel.title.isEmpty {
-                                Text(Constants.untitled)
-                                    .foregroundStyle(viewModel.textSecondary)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                        .textFieldStyle(.plain)
-                        .font(.system(.caption, design: .default))
-                        .fontWeight(.medium)
-                        .fontWidth(.expanded)
-                        .foregroundStyle(viewModel.title.count > 0 ? viewModel.textPrimary : viewModel.textSecondary.opacity(0.5))
-                        .focused($isTitleFocused)
-                        .onChange(of: viewModel.title) { oldValue, newValue in
-                            if newValue.count > Constants.characterLimit {
-                                viewModel.title = String(newValue.prefix(Constants.characterLimit))
-                            } else {
-                                viewModel.title = newValue.uppercased()
-                            }
-                        }
+                    .buttonStyle(.plain)
+                    .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
                 }
+                
+                TextField("", text: $viewModel.title)
+                    .overlay(alignment: .leading) {
+                        if viewModel.title.isEmpty {
+                            Text(Constants.untitled)
+                                .foregroundStyle(viewModel.textSecondary)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .textFieldStyle(.plain)
+                    .font(.system(.caption, design: .default))
+                    .fontWeight(.medium)
+                    .fontWidth(.expanded)
+                    .foregroundStyle(viewModel.title.count > 0 ? viewModel.textPrimary : viewModel.textSecondary.opacity(0.5))
+                    .focused($isTitleFocused)
+                    .onChange(of: viewModel.title) { oldValue, newValue in
+                        if newValue.count > Constants.characterLimit {
+                            viewModel.title = String(newValue.prefix(Constants.characterLimit))
+                        } else {
+                            viewModel.title = newValue.uppercased()
+                        }
+                    }
+            }
             
-            HStack(alignment: .bottom) {
+            HStack(alignment: .center) {
                 Text(viewModel.timeText)
                     .contentTransition(.numericText(countsDown: true))
                     .font(.system(.title, design: .monospaced))
@@ -88,11 +88,11 @@ struct TimerListCell: View {
                     }
                 )
             }
-            .padding(Sizing.xs)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                isTitleFocused = false
-            }
+        }
+        .padding(Sizing.xs)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isTitleFocused = false
         }
     }
 }

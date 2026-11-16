@@ -227,10 +227,10 @@ struct ContentView: View {
             
             if !appViewModel.timerViewModels.isEmpty {
                 VStack(spacing: Sizing.sm) {
-                    ForEach(Array(appViewModel.timerViewModels.enumerated()), id: \.offset) { index, viewModel in
+                    ForEach(appViewModel.timerViewModels, id: \.id) { viewModel in
                         TimerListCell(viewModel: viewModel, onDelete: { appViewModel.removeTimer(id: viewModel.id) })
                         
-                        if index < appViewModel.timerViewModels.count - 1 {
+                        if viewModel.id != appViewModel.timerViewModels.last?.id {
                             Divider()
                         }
                     }
