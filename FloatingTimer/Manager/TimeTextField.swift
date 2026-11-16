@@ -11,9 +11,11 @@ import AppKit
 struct TimeTextField: View {
     @Binding var value: Int
     let max: Int
+    var fontSize: CGFloat = 48
     var onMoveLeft: (() -> Void)? = nil
     var onMoveRight: (() -> Void)? = nil
     var onEnter: (() -> Void)? = nil
+    var onEscape: (() -> Void)? = nil
     
     @State private var text: String = ""
     @State private var shouldClearOnNextInput = false
@@ -24,7 +26,7 @@ struct TimeTextField: View {
     
     var body: some View {
         TextField("00", text: $text)
-            .font(.system(size: 48, weight: .bold, design: .monospaced))
+            .font(.system(size: fontSize, weight: .bold, design: .monospaced))
             .monospacedDigit()
             .multilineTextAlignment(.leading)
             .textFieldStyle(.plain)
@@ -84,6 +86,9 @@ text = "0" + String(newValue.last ?? "0")
                             .backgroundColor: NSColor.clear
                         ]
                         fieldEditor.insertionPointColor = .clear
+                        // Selects the seeded value so the first keystroke replaces
+                        // it, which matters when the field opens pre-filled.
+                        fieldEditor.selectAll(nil)
                     }
                 }
             }
@@ -127,6 +132,11 @@ text = "0" + String(newValue.last ?? "0")
             .onKeyPress(.return) {
                 guard let onEnter else { return .ignored }
                 onEnter()
+                return .handled
+            }
+            .onKeyPress(.escape) {
+                guard let onEscape else { return .ignored }
+                onEscape()
                 return .handled
             }
     }

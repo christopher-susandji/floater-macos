@@ -119,7 +119,7 @@ struct TimerControls: View {
                     if configuration.style == .compact { Divider().frame(height: 12) }
                 }
                 
-                if viewModel.timerState == .finished || viewModel.timerState == .idle {
+                if viewModel.timerState != .running {
                     Button {
                         onEdit()
                     } label: {
