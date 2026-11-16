@@ -20,9 +20,8 @@ struct TimerListCell: View {
     }
 
     var body: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: Sizing.xxs) {
-                HStack(spacing: Sizing.xs) {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: Sizing.xs) {
                     if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
                         Button {
                             if isBroadcasting {
@@ -38,30 +37,31 @@ struct TimerListCell: View {
                         .buttonStyle(.plain)
                         .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
                     }
-
+                    
                     TextField("", text: $viewModel.title)
-                    .overlay(alignment: .leading) {
-                        if viewModel.title.isEmpty {
-                            Text(Constants.untitled)
-                                .foregroundStyle(viewModel.textSecondary)
-                                .allowsHitTesting(false)
+                        .overlay(alignment: .leading) {
+                            if viewModel.title.isEmpty {
+                                Text(Constants.untitled)
+                                    .foregroundStyle(viewModel.textSecondary)
+                                    .allowsHitTesting(false)
+                            }
                         }
-                    }
-                    .textFieldStyle(.plain)
-                    .font(.system(.caption, design: .default))
-                    .fontWeight(.medium)
-                    .fontWidth(.expanded)
-                    .foregroundStyle(viewModel.title.count > 0 ? viewModel.textPrimary : viewModel.textSecondary.opacity(0.5))
-                    .focused($isTitleFocused)
-                    .onChange(of: viewModel.title) { oldValue, newValue in
-                        if newValue.count > Constants.characterLimit {
-                            viewModel.title = String(newValue.prefix(Constants.characterLimit))
-                        } else {
-                            viewModel.title = newValue.uppercased()
+                        .textFieldStyle(.plain)
+                        .font(.system(.caption, design: .default))
+                        .fontWeight(.medium)
+                        .fontWidth(.expanded)
+                        .foregroundStyle(viewModel.title.count > 0 ? viewModel.textPrimary : viewModel.textSecondary.opacity(0.5))
+                        .focused($isTitleFocused)
+                        .onChange(of: viewModel.title) { oldValue, newValue in
+                            if newValue.count > Constants.characterLimit {
+                                viewModel.title = String(newValue.prefix(Constants.characterLimit))
+                            } else {
+                                viewModel.title = newValue.uppercased()
+                            }
                         }
-                    }
                 }
-                
+            
+            HStack(alignment: .bottom) {
                 Text(viewModel.timeText)
                     .contentTransition(.numericText(countsDown: true))
                     .font(.system(.title, design: .monospaced))
@@ -69,30 +69,40 @@ struct TimerListCell: View {
                     .foregroundStyle(viewModel.isRunning ? viewModel.textPrimary : viewModel.textSecondary)
                     .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
                     .transition(.opacity)
+                
+                Spacer()
+                
+                TimerControls(
+                    viewModel: viewModel,
+                    namespace: namespace,
+                    configuration: .init(style: .compact, accentColor: viewModel.accentColor),
+                    onPlayPause: { viewModel.startPause() },
+                    onReset: { viewModel.reset() },
+                    onEdit: {
+                        FloatingTimerManager.shared.focusTimer(viewModel.id)
+                        viewModel.requestEditMode()
+                    },
+                    onDelete: {
+                        onDelete?()
+                        FloatingTimerManager.shared.closeTimer(viewModel.id)
+                    }
+                )
             }
-            
-            Spacer()
-            
-            TimerControls(
-                viewModel: viewModel,
-                namespace: namespace,
-                configuration: .init(style: .compact, accentColor: viewModel.accentColor),
-                onPlayPause: { viewModel.startPause() },
-                onReset: { viewModel.reset() },
-                onEdit: {
-                    FloatingTimerManager.shared.focusTimer(viewModel.id)
-                    viewModel.requestEditMode()
-                },
-                onDelete: {
-                    onDelete?()
-                    FloatingTimerManager.shared.closeTimer(viewModel.id)
-                }
-            )
-        }
-        .padding(Sizing.xs)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            isTitleFocused = false
+            .padding(Sizing.xs)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isTitleFocused = false
+            }
         }
     }
+}
+
+#Preview {
+    TimerListCell(
+        viewModel: TimerViewModel(model: TimerModel(title: "HELLO WORRRRLLLDDDD", duration: 1000)),
+        onDelete: { }
+    )
+    .environment(AppViewModel())
+    .padding()
+    .frame(width: 300)
 }
