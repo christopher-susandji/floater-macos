@@ -93,6 +93,7 @@ struct TimerListCell: View {
                 isHovered = hovering
             }
         }
+        .animation(.easeInOut(duration: 0.12), value: appViewModel.isSingleTimerMode)
         .onTapGesture {
             isTitleFocused = false
             focusedTimeField = nil
@@ -108,11 +109,15 @@ struct TimerListCell: View {
     // - MARK: Title
 
     private var titleRow: some View {
-        HStack(spacing: Sizing.xs) {
-            if showsPinButton {
-                pinButton
-                    .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
-            }
+        HStack(spacing: 0) {
+            // Kept in the layout at all times so showing or hiding it can't
+            // change the row's height; only its width and opacity animate.
+            pinButton
+                .frame(width: showsPinButton ? 14 : 0, height: 14)
+                .padding(.trailing, showsPinButton ? Sizing.xs : 0)
+                .opacity(showsPinButton ? 1 : 0)
+                .allowsHitTesting(showsPinButton)
+                .clipped()
 
             TextField("", text: $viewModel.title)
                 .overlay(alignment: .leading) {
@@ -159,9 +164,11 @@ struct TimerListCell: View {
         .accessibilityLabel(isOnDesktop ? "Chosen timer" : "Choose this timer")
     }
 
-    /// Pinned timers always show their pin; the rest show it on hover.
+    /// Pinned timers always show their pin; the rest show it on hover. With one
+    /// timer at a time the desktop carries the top of the list, so there is
+    /// nothing to pick and the pin stays out of the way.
     private var showsPinButton: Bool {
-        isOnDesktop || isHovered
+        !appViewModel.isSingleTimerMode && (isOnDesktop || isHovered)
     }
 
     // - MARK: Time

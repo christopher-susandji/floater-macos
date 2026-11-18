@@ -96,11 +96,13 @@ class FloatingTimerManager: NSObject {
     
     // - MARK: Showing timers
     
-    /// Puts a timer on the desktop. In single mode that means replacing whichever
-    /// timer is already there.
+    /// Puts a timer on the desktop. In single mode the desktop carries the first
+    /// timer in the list, so that is what gets shown.
     func showTimer(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
         if appViewModel.isSingleTimerMode {
-            activate(viewModel, in: appViewModel)
+            if let top = appViewModel.timerViewModels.first {
+                activate(top, in: appViewModel)
+            }
         } else {
             presentPanel(
                 for: viewModel,
@@ -167,8 +169,9 @@ class FloatingTimerManager: NSObject {
             return
         }
         
-        // Nothing on the desktop yet; the chosen timer goes up on its own.
-        guard let keep = preferredTimer(in: appViewModel) else {
+        // With one timer at a time the desktop carries the first timer in the
+        // list, so that is the one to keep.
+        guard let keep = appViewModel.timerViewModels.first else {
             appViewModel.activeTimerID = nil
             return
         }
@@ -196,28 +199,6 @@ class FloatingTimerManager: NSObject {
         }
     }
     
-    /// The timer worth keeping when the desktop collapses: the pinned one, else
-    /// the panel holding key focus, else any panel that is open, else the one
-    /// being broadcast, else the most recently created.
-    private func preferredTimer(in appViewModel: AppViewModel) -> TimerViewModel? {
-        if let activeID = appViewModel.activeTimerID,
-           let timer = appViewModel.timerViewModel(id: activeID) {
-            return timer
-        }
-        if let keyPanel = NSApp.keyWindow as? NSPanel,
-           let id = panels.first(where: { $0.value === keyPanel })?.key,
-           let timer = appViewModel.timerViewModel(id: id) {
-            return timer
-        }
-        if let id = panels.keys.first, let timer = appViewModel.timerViewModel(id: id) {
-            return timer
-        }
-        if let broadcastID = appViewModel.broadcastTimerID,
-           let timer = appViewModel.timerViewModel(id: broadcastID) {
-            return timer
-        }
-        return appViewModel.timerViewModels.last
-    }
     
     // - MARK: Panels
     

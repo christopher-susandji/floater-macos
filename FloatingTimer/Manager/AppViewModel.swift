@@ -88,7 +88,13 @@ final class AppViewModel {
         guard canCreateTimer else { return nil }
         let model = TimerModel(title: title, duration: TimeInterval(seconds), type: type)
         let viewModel = TimerViewModel(model: model)
-        timerViewModels.append(viewModel)
+        // With one timer at a time the desktop carries the top of the list, so a
+        // new timer goes there; otherwise timers queue up in creation order.
+        if isSingleTimerMode {
+            timerViewModels.insert(viewModel, at: 0)
+        } else {
+            timerViewModels.append(viewModel)
+        }
         return viewModel
     }
 
@@ -100,6 +106,15 @@ final class AppViewModel {
             activeTimerID = nil
         }
         timerViewModels.removeAll { $0.id == id }
+
+        guard isSingleTimerMode else { return }
+        // The desktop carries the top of the list, so whatever is there now takes
+        // over from the timer that just left.
+        if let next = timerViewModels.first {
+            FloatingTimerManager.shared.activate(next, in: self)
+        } else {
+            FloatingTimerManager.shared.deactivate(in: self)
+        }
     }
 
     func timerViewModel(id: UUID) -> TimerViewModel? {
