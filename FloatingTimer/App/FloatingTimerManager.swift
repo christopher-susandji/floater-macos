@@ -15,13 +15,6 @@ class FloatingTimerManager: NSObject {
     private var panelDelegates: [UUID: PanelDelegate] = [:]
     private var slots: [UUID: Int] = [:]
     
-    /// Origin of the most recently active timer panel (the last one created,
-    /// focused or dragged). New timers spawn here so they reuse the spot the
-    /// user last placed a timer in. Kept in memory for the session only, and
-    /// survives the active panel being closed so the next timer still lands
-    /// where the previous one was.
-    private var lastActiveOrigin: NSPoint?
-    
     private let panelSize = NSSize(width: 220, height: 220)
     private let gridSpacing: CGFloat = 16
     private let columns = 3
@@ -79,10 +72,10 @@ class FloatingTimerManager: NSObject {
         )
     }
     
-    /// The spot a new panel takes: wherever the last active timer was, or the
-    /// grid when nothing has been placed yet this session.
+    /// The spot a new panel takes: the next free cell of the grid, so several
+    /// timers sit side by side instead of piling up on one another.
     private func nextOrigin() -> NSPoint {
-        lastActiveOrigin.map(sanitizedOrigin) ?? frameOrigin(forSlot: nextAvailableSlot())
+        frameOrigin(forSlot: nextAvailableSlot())
     }
     
     /// Where the single desktop panel should sit when its timer is swapped: the
@@ -123,7 +116,6 @@ class FloatingTimerManager: NSObject {
         
         // Already on the desktop: just bring it forward.
         if appViewModel.activeTimerID == viewModel.id, let panel = panels[viewModel.id] {
-            lastActiveOrigin = panel.frame.origin
             panel.makeKeyAndOrderFront(nil)
             return
         }
@@ -198,7 +190,6 @@ class FloatingTimerManager: NSObject {
     private func presentPanel(for viewModel: TimerViewModel, in appViewModel: AppViewModel, at origin: NSPoint, slot: Int) {
         if let panel = panels[viewModel.id] {
             panel.setFrameOrigin(origin)
-            lastActiveOrigin = origin
             panel.makeKeyAndOrderFront(nil)
             return
         }
@@ -232,7 +223,6 @@ class FloatingTimerManager: NSObject {
         
         slots[viewModel.id] = slot
         panel.setFrameOrigin(origin)
-        lastActiveOrigin = origin
         
         let panelDelegate = PanelDelegate(
             onClose: { [weak self] in
@@ -243,9 +233,6 @@ class FloatingTimerManager: NSObject {
                     appViewModel.activeTimerID = nil
                     appViewModel.stopBroadcast()
                 }
-            },
-            onMove: { [weak self] origin in
-                self?.lastActiveOrigin = origin
             }
         )
         panel.delegate = panelDelegate
@@ -278,29 +265,18 @@ class FloatingTimerManager: NSObject {
     /// Brings the given timer's floating panel to the front, without stealing key focus
     /// away from the main app window any more than necessary.
     func focusTimer(_ id: UUID) {
-        guard let panel = panels[id] else { return }
-        // Focusing a timer makes it the active one, so its spot becomes the one
-        // the next timer will reuse.
-        lastActiveOrigin = panel.frame.origin
-        panel.makeKeyAndOrderFront(nil)
+        panels[id]?.makeKeyAndOrderFront(nil)
     }
 }
 
 class PanelDelegate: NSObject, NSWindowDelegate {
     private let onClose: () -> Void
-    private let onMove: (NSPoint) -> Void
     
-    init(onClose: @escaping () -> Void, onMove: @escaping (NSPoint) -> Void) {
+    init(onClose: @escaping () -> Void) {
         self.onClose = onClose
-        self.onMove = onMove
     }
     
     func windowWillClose(_ notification: Notification) {
         onClose()
-    }
-    
-    func windowDidMove(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow else { return }
-        onMove(window.frame.origin)
     }
 }
