@@ -19,7 +19,9 @@ struct SettingsView: View {
         if appViewModel.isSingleTimerMode {
             return appViewModel.activeTimerID
         }
-        return appViewModel.broadcastTimerID ?? appViewModel.timerViewModels.last?.id
+        return appViewModel.activeTimerID
+            ?? appViewModel.broadcastTimerID
+            ?? appViewModel.timerViewModels.last?.id
     }
 
     private var broadcastBinding: Binding<Bool> {
@@ -37,8 +39,8 @@ struct SettingsView: View {
 
     private var cameraCaption: String {
         appViewModel.isSingleTimerMode
-            ? "The pinned timer is what the camera shows. Picking another timer moves the feed with it."
-            : "The camera button on a timer's row starts and stops the feed. Only one timer can be broadcast at a time."
+            ? "The pinned timer is what the desktop and the camera show. Pinning another timer moves both."
+            : "Pin a timer to be the one the camera shows. The other timers keep their own floating panels."
     }
 
     var body: some View {

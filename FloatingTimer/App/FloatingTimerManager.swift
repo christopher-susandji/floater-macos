@@ -111,10 +111,18 @@ class FloatingTimerManager: NSObject {
         }
     }
     
-    /// Makes the given timer the one floating on the desktop, in single mode.
+    /// Makes the given timer the chosen one: on the desktop in single mode, and
+    /// the timer the camera shows in either mode.
     func activate(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
         guard appViewModel.isSingleTimerMode else {
-            showTimer(viewModel, in: appViewModel)
+            // Multi mode leaves the other panels alone; the choice only decides
+            // which timer is the one and what the camera shows.
+            appViewModel.activeTimerID = viewModel.id
+            appViewModel.retargetBroadcast(timerID: viewModel.id)
+            if let panel = panels[viewModel.id] {
+                lastActiveOrigin = panel.frame.origin
+                panel.makeKeyAndOrderFront(nil)
+            }
             return
         }
         
@@ -135,16 +143,17 @@ class FloatingTimerManager: NSObject {
         presentPanel(for: viewModel, in: appViewModel, at: origin, slot: nextAvailableSlot())
     }
     
-    /// Takes the floating timer off the desktop without deleting it.
+    /// Clears the chosen timer, leaving it in the list. In single mode that also
+    /// takes the timer off the desktop.
     func deactivate(in appViewModel: AppViewModel) {
-        for id in Array(panels.keys) {
-            tearDown(id)
+        if appViewModel.isSingleTimerMode {
+            for id in Array(panels.keys) {
+                tearDown(id)
+            }
         }
         appViewModel.activeTimerID = nil
-        // Nothing is on the desktop, so the feed has nothing to show.
-        if appViewModel.isSingleTimerMode {
-            appViewModel.stopBroadcast()
-        }
+        // Nothing is chosen, so the feed has nothing to show.
+        appViewModel.stopBroadcast()
     }
     
     /// Collapses the desktop to one timer when single mode is turned on, keeping
@@ -152,7 +161,8 @@ class FloatingTimerManager: NSObject {
     /// on the desktop, which is what "one timer at a time" being off means.
     func applySingleTimerMode(in appViewModel: AppViewModel) {
         guard appViewModel.isSingleTimerMode else {
-            appViewModel.activeTimerID = nil
+            // The chosen timer survives the switch; it just stops limiting the
+            // desktop, so put the rest back alongside it.
             presentTimersWithoutPanels(in: appViewModel)
             return
         }
@@ -182,10 +192,14 @@ class FloatingTimerManager: NSObject {
         }
     }
     
-    /// The timer worth keeping when the desktop collapses: the panel holding key
-    /// focus, else any panel that is open, else the one being broadcast, else the
-    /// most recently created.
+    /// The timer worth keeping when the desktop collapses: the pinned one, else
+    /// the panel holding key focus, else any panel that is open, else the one
+    /// being broadcast, else the most recently created.
     private func preferredTimer(in appViewModel: AppViewModel) -> TimerViewModel? {
+        if let activeID = appViewModel.activeTimerID,
+           let timer = appViewModel.timerViewModel(id: activeID) {
+            return timer
+        }
         if let keyPanel = NSApp.keyWindow as? NSPanel,
            let id = panels.first(where: { $0.value === keyPanel })?.key,
            let timer = appViewModel.timerViewModel(id: id) {
@@ -247,11 +261,9 @@ class FloatingTimerManager: NSObject {
                 self?.panels.removeValue(forKey: viewModel.id)
                 self?.panelDelegates.removeValue(forKey: viewModel.id)
                 self?.slots.removeValue(forKey: viewModel.id)
-                if appViewModel.activeTimerID == viewModel.id {
+                if appViewModel.isSingleTimerMode, appViewModel.activeTimerID == viewModel.id {
                     appViewModel.activeTimerID = nil
-                    if appViewModel.isSingleTimerMode {
-                        appViewModel.stopBroadcast()
-                    }
+                    appViewModel.stopBroadcast()
                 }
             },
             onMove: { [weak self] origin in
@@ -267,11 +279,9 @@ class FloatingTimerManager: NSObject {
     
     func closeTimer(_ id: UUID, in appViewModel: AppViewModel) {
         tearDown(id)
-        if appViewModel.activeTimerID == id {
+        if appViewModel.isSingleTimerMode, appViewModel.activeTimerID == id {
             appViewModel.activeTimerID = nil
-            if appViewModel.isSingleTimerMode {
-                appViewModel.stopBroadcast()
-            }
+            appViewModel.stopBroadcast()
         }
     }
     

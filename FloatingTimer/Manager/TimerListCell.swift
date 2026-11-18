@@ -10,10 +10,11 @@ import SwiftUI
 struct TimerListCell: View {
     @Bindable var viewModel: TimerViewModel
     @Environment(AppViewModel.self) private var appViewModel
-    @State private var cameraExtensionManager = CameraExtensionManager.shared
     var onDelete: (() -> Void)?
     @Namespace private var namespace
     @FocusState private var isTitleFocused: Bool
+
+    @State private var isHovered = false
 
     @State private var isEditingTime = false
     @State private var draftHours = 0
@@ -23,10 +24,6 @@ struct TimerListCell: View {
 
     private enum TimeField: Hashable {
         case hours, minutes, seconds
-    }
-
-    private var isBroadcasting: Bool {
-        appViewModel.broadcastTimerID == viewModel.id
     }
 
     private var isOnDesktop: Bool {
@@ -91,6 +88,7 @@ struct TimerListCell: View {
         }
         .padding(Sizing.xs)
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .onTapGesture {
             isTitleFocused = false
             focusedTimeField = nil
@@ -107,11 +105,7 @@ struct TimerListCell: View {
 
     private var titleRow: some View {
         HStack(spacing: Sizing.xs) {
-            if appViewModel.isSingleTimerMode {
-                pinButton
-            } else if cameraExtensionManager.isInstalled {
-                cameraButton
-            }
+            pinButton
 
             TextField("", text: $viewModel.title)
                 .overlay(alignment: .leading) {
@@ -137,10 +131,10 @@ struct TimerListCell: View {
         }
     }
 
-    /// In single mode the top-left control picks which timer owns the desktop,
-    /// and that choice also decides what the camera shows: selecting a timer
-    /// while the feed is live points the feed at it. Multi mode keeps the
-    /// camera button, since there is no single timer to select.
+    /// The one control at the top of the row: it picks the timer, which is what
+    /// the desktop shows in single mode and what the camera shows either way.
+    /// It stays visible once pinned and otherwise only appears while the row is
+    /// hovered, so an idle list stays quiet.
     private var pinButton: some View {
         Button {
             if isOnDesktop {
@@ -154,24 +148,16 @@ struct TimerListCell: View {
                 .foregroundStyle(isOnDesktop ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
         }
         .buttonStyle(.plain)
-        .help(isOnDesktop ? "This timer is on the desktop" : "Show this timer on the desktop")
-        .accessibilityLabel(isOnDesktop ? "On the desktop" : "Show on the desktop")
+        .opacity(showsPinButton ? 1 : 0)
+        .allowsHitTesting(showsPinButton)
+        .accessibilityHidden(!showsPinButton)
+        .help(isOnDesktop ? "This timer is the chosen one" : "Choose this timer")
+        .accessibilityLabel(isOnDesktop ? "Chosen timer" : "Choose this timer")
     }
 
-    private var cameraButton: some View {
-        Button {
-            if isBroadcasting {
-                appViewModel.stopBroadcast()
-            } else {
-                appViewModel.startBroadcast(timerID: viewModel.id)
-            }
-        } label: {
-            Image(systemName: isBroadcasting ? "video.fill" : "video")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
-        }
-        .buttonStyle(.plain)
-        .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
+    /// Pinned timers always show their pin; the rest show it on hover.
+    private var showsPinButton: Bool {
+        isOnDesktop || isHovered
     }
 
     // - MARK: Time
