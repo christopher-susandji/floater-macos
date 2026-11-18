@@ -109,12 +109,19 @@ final class AppViewModel {
     // - MARK: Live video broadcast
 
     /// Starts (or restarts) broadcasting the given timer as a live-video source.
+    /// The camera can only carry one timer, so broadcasting also puts the app in
+    /// single-panel mode with that timer chosen.
     func startBroadcast(timerID: UUID) {
+        activeTimerID = timerID
         broadcastTimerID = timerID
         LiveVideoFrameSource.shared.viewModel = timerViewModel(id: timerID)
         LiveVideoFrameSource.shared.backgroundColor = broadcastBackgroundColor
         LiveVideoFrameSource.shared.start()
         isBroadcasting = true
+
+        if !isSingleTimerMode {
+            setSingleTimerMode(true)
+        }
     }
 
     /// Points an already-running feed at another timer, without restarting the

@@ -102,7 +102,7 @@ struct SettingsView: View {
                 )) {
                     Text("Show one timer at a time")
                 }
-                Text("Keeps a single floating timer on the desktop. Create a timer or pick one in the list to swap which timer is shown.")
+                Text("Keeps a single floating timer on the desktop. Pin a timer in the list to swap which one is shown. Switching on Floater as Camera Input turns this on, since the camera can only show one timer.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {

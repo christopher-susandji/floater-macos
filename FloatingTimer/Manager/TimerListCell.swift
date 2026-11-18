@@ -88,7 +88,11 @@ struct TimerListCell: View {
         }
         .padding(Sizing.xs)
         .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
+            }
+        }
         .onTapGesture {
             isTitleFocused = false
             focusedTimeField = nil
@@ -105,7 +109,10 @@ struct TimerListCell: View {
 
     private var titleRow: some View {
         HStack(spacing: Sizing.xs) {
-            pinButton
+            if showsPinButton {
+                pinButton
+                    .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
+            }
 
             TextField("", text: $viewModel.title)
                 .overlay(alignment: .leading) {
@@ -148,9 +155,6 @@ struct TimerListCell: View {
                 .foregroundStyle(isOnDesktop ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
         }
         .buttonStyle(.plain)
-        .opacity(showsPinButton ? 1 : 0)
-        .allowsHitTesting(showsPinButton)
-        .accessibilityHidden(!showsPinButton)
         .help(isOnDesktop ? "This timer is the chosen one" : "Choose this timer")
         .accessibilityLabel(isOnDesktop ? "Chosen timer" : "Choose this timer")
     }

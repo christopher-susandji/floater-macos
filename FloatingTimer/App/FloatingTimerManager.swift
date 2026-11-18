@@ -167,8 +167,8 @@ class FloatingTimerManager: NSObject {
             return
         }
         
-        // Nothing on the desktop to collapse; the next timer shown takes the spot.
-        guard !panels.isEmpty, let keep = preferredTimer(in: appViewModel) else {
+        // Nothing on the desktop yet; the chosen timer goes up on its own.
+        guard let keep = preferredTimer(in: appViewModel) else {
             appViewModel.activeTimerID = nil
             return
         }
@@ -179,6 +179,10 @@ class FloatingTimerManager: NSObject {
         
         appViewModel.activeTimerID = keep.id
         appViewModel.retargetBroadcast(timerID: keep.id)
+        
+        if panels[keep.id] == nil {
+            presentPanel(for: keep, in: appViewModel, at: nextOrigin(), slot: nextAvailableSlot())
+        }
     }
     
     /// Puts every timer that isn't on the desktop back on it, laid out on the grid
