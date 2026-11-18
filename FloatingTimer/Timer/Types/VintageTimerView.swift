@@ -66,7 +66,6 @@ struct VintageTimerView: TimerContentView {
                 namespace: namespace,
                 configuration: .init(
                     transition: .opacity.combined(with: .move(edge: .bottom)),
-                    topPadding: Sizing.sm,
                     themed: true,
                     accentColor: viewModel.accentColor,
                     prominentButton: .init(

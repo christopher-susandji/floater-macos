@@ -11,7 +11,7 @@ import AppKit
 struct TimeTextField: View {
     @Binding var value: Int
     let max: Int
-    var fontSize: CGFloat = 48
+    var font: Font = .system(size: 48, weight: .bold, design: .monospaced)
     var onMoveLeft: (() -> Void)? = nil
     var onMoveRight: (() -> Void)? = nil
     var onEnter: (() -> Void)? = nil
@@ -26,7 +26,7 @@ struct TimeTextField: View {
     
     var body: some View {
         TextField("00", text: $text)
-            .font(.system(size: fontSize, weight: .bold, design: .monospaced))
+            .font(font)
             .monospacedDigit()
             .multilineTextAlignment(.leading)
             .textFieldStyle(.plain)

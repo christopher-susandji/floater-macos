@@ -43,8 +43,8 @@ struct TimerListCell: View {
 
     @State private var usesHoursField = false
 
-    private var editorFontSize: CGFloat {
-        editorShowsHours ? 20 : 26
+    private var timeFont: Font {
+        .system(.title, design: .monospaced)
     }
 
     var body: some View {
@@ -56,21 +56,27 @@ struct TimerListCell: View {
 
                 Spacer()
 
-                TimerControls(
+                TimerListControls(
                     viewModel: viewModel,
                     namespace: namespace,
-                    configuration: .init(style: .compact, accentColor: viewModel.accentColor),
+                    accentColor: viewModel.accentColor,
+                    isEditingDuration: isEditingTime,
                     onPlayPause: {
                         commitTimeEdit()
                         viewModel.startPause()
                     },
-                    onReset: {
+                    onStop: {
                         commitTimeEdit()
                         viewModel.reset()
                     },
-                    onEdit: {
-                        FloatingTimerManager.shared.focusTimer(viewModel.id)
-                        viewModel.requestEditMode()
+                    onToggleEdit: {
+                        if isEditingTime {
+                            cancelTimeEdit()
+                        } else {
+                            // Opens the duration fields on the last one, which is
+                            // where a new duration usually gets typed.
+                            beginTimeEdit(focusing: .seconds)
+                        }
                     },
                     onDelete: {
                         onDelete?()
@@ -146,7 +152,7 @@ struct TimerListCell: View {
         } else {
             Text(viewModel.timeText)
                 .contentTransition(.numericText(countsDown: true))
-                .font(.system(.title, design: .monospaced))
+                .font(timeFont)
                 .monospacedDigit()
                 .foregroundStyle(viewModel.isRunning ? viewModel.textPrimary : viewModel.textSecondary)
                 .animation(viewModel.isRunning ? .linear(duration: 0.2) : nil, value: viewModel.timeText)
@@ -161,12 +167,12 @@ struct TimerListCell: View {
     }
 
     private var timeEditor: some View {
-        HStack(spacing: Sizing.xxs) {
+        HStack(spacing: .zero) {
             if editorShowsHours {
                 TimeTextField(
                     value: $draftHours,
                     max: 23,
-                    fontSize: editorFontSize,
+                    font: timeFont,
                     onMoveRight: { focusedTimeField = .minutes },
                     onEnter: { commitTimeEdit() },
                     onEscape: { cancelTimeEdit() }
@@ -179,7 +185,7 @@ struct TimerListCell: View {
             TimeTextField(
                 value: $draftMinutes,
                 max: 59,
-                fontSize: editorFontSize,
+                font: timeFont,
                 onMoveLeft: editorShowsHours ? { focusedTimeField = .hours } : nil,
                 onMoveRight: { focusedTimeField = .seconds },
                 onEnter: { commitTimeEdit() },
@@ -192,24 +198,25 @@ struct TimerListCell: View {
             TimeTextField(
                 value: $draftSeconds,
                 max: 59,
-                fontSize: editorFontSize,
+                font: timeFont,
                 onMoveLeft: { focusedTimeField = .minutes },
                 onEnter: { commitTimeEdit() },
                 onEscape: { cancelTimeEdit() }
             )
             .focused($focusedTimeField, equals: .seconds)
         }
+        .foregroundStyle(viewModel.textSecondary)
     }
 
     private var timeSeparator: some View {
         Text(":")
-            .font(.system(size: editorFontSize * 0.7, weight: .semibold, design: .monospaced))
+            .font(timeFont)
             .foregroundStyle(viewModel.textSecondary)
     }
 
     // - MARK: Time editing
 
-    private func beginTimeEdit() {
+    private func beginTimeEdit(focusing field: TimeField? = nil) {
         let total = Int(viewModel.duration)
         draftHours = total / 3600
         draftMinutes = (total % 3600) / 60
@@ -221,7 +228,7 @@ struct TimerListCell: View {
         }
 
         DispatchQueue.main.async {
-            focusedTimeField = usesHoursField ? .hours : .minutes
+            focusedTimeField = field ?? (usesHoursField ? .hours : .minutes)
         }
     }
 
