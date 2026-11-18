@@ -164,11 +164,11 @@ struct TimerListCell: View {
         .accessibilityLabel(isOnDesktop ? "Chosen timer" : "Choose this timer")
     }
 
-    /// Pinned timers always show their pin; the rest show it on hover. With one
-    /// timer at a time the desktop carries the top of the list, so there is
-    /// nothing to pick and the pin stays out of the way.
+    /// With one timer at a time the pin is how you swap which timer floats, so it
+    /// is only offered in that mode: always visible once pinned, otherwise on
+    /// hover.
     private var showsPinButton: Bool {
-        !appViewModel.isSingleTimerMode && (isOnDesktop || isHovered)
+        appViewModel.isSingleTimerMode && (isOnDesktop || isHovered)
     }
 
     // - MARK: Time

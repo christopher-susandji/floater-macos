@@ -113,18 +113,11 @@ class FloatingTimerManager: NSObject {
         }
     }
     
-    /// Makes the given timer the chosen one: on the desktop in single mode, and
-    /// the timer the camera shows in either mode.
+    /// Makes the given timer the one on the desktop, swapping out whichever timer
+    /// was there.
     func activate(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
         guard appViewModel.isSingleTimerMode else {
-            // Multi mode leaves the other panels alone; the choice only decides
-            // which timer is the one and what the camera shows.
-            appViewModel.activeTimerID = viewModel.id
-            appViewModel.retargetBroadcast(timerID: viewModel.id)
-            if let panel = panels[viewModel.id] {
-                lastActiveOrigin = panel.frame.origin
-                panel.makeKeyAndOrderFront(nil)
-            }
+            showTimer(viewModel, in: appViewModel)
             return
         }
         

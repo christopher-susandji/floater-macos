@@ -39,8 +39,8 @@ struct SettingsView: View {
 
     private var cameraCaption: String {
         appViewModel.isSingleTimerMode
-            ? "The timer at the top of the list is the one on the desktop and the one the camera shows."
-            : "Pin a timer to be the one the camera shows. Turning the camera on switches to one timer at a time."
+            ? "The pinned timer is what the desktop and the camera show. The top of the list starts out pinned."
+            : "One floating timer per timer. Turn this on to keep a single timer on the desktop."
     }
 
     var body: some View {
@@ -102,7 +102,7 @@ struct SettingsView: View {
                 )) {
                     Text("Show one timer at a time")
                 }
-                Text("The timer at the top of the list is the one on the desktop; new timers go there. Turning on Floater as Camera Input switches this on too, since the camera can only show one timer.")
+                Text("Keeps a single floating timer on the desktop. Pin a timer in the list to swap which one is shown; the top of the list starts out pinned. Turning on Floater as Camera Input switches this on too.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {

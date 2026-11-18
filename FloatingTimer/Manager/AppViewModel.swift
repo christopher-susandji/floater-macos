@@ -99,17 +99,17 @@ final class AppViewModel {
     }
 
     func removeTimer(id: UUID) {
+        let wasActive = activeTimerID == id
         if broadcastTimerID == id {
             stopBroadcast()
         }
-        if activeTimerID == id {
+        if wasActive {
             activeTimerID = nil
         }
         timerViewModels.removeAll { $0.id == id }
 
-        guard isSingleTimerMode else { return }
-        // The desktop carries the top of the list, so whatever is there now takes
-        // over from the timer that just left.
+        guard isSingleTimerMode, wasActive else { return }
+        // The desktop can't stay empty, so the top of the list takes over.
         if let next = timerViewModels.first {
             FloatingTimerManager.shared.activate(next, in: self)
         } else {
