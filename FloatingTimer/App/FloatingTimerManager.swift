@@ -102,7 +102,12 @@ class FloatingTimerManager: NSObject {
         if appViewModel.isSingleTimerMode {
             activate(viewModel, in: appViewModel)
         } else {
-            presentPanel(for: viewModel, in: appViewModel, at: nextOrigin())
+            presentPanel(
+                for: viewModel,
+                in: appViewModel,
+                at: nextOrigin(),
+                slot: nextAvailableSlot()
+            )
         }
     }
     
@@ -127,7 +132,7 @@ class FloatingTimerManager: NSObject {
         
         appViewModel.activeTimerID = viewModel.id
         appViewModel.retargetBroadcast(timerID: viewModel.id)
-        presentPanel(for: viewModel, in: appViewModel, at: origin)
+        presentPanel(for: viewModel, in: appViewModel, at: origin, slot: nextAvailableSlot())
     }
     
     /// Takes the floating timer off the desktop without deleting it.
@@ -143,11 +148,12 @@ class FloatingTimerManager: NSObject {
     }
     
     /// Collapses the desktop to one timer when single mode is turned on, keeping
-    /// the one the user is looking at. Turning the mode off leaves that panel
-    /// where it is, as the timer's ordinary panel.
+    /// the one the user is looking at. Turning the mode off puts every timer back
+    /// on the desktop, which is what "one timer at a time" being off means.
     func applySingleTimerMode(in appViewModel: AppViewModel) {
         guard appViewModel.isSingleTimerMode else {
             appViewModel.activeTimerID = nil
+            presentTimersWithoutPanels(in: appViewModel)
             return
         }
         
@@ -163,6 +169,17 @@ class FloatingTimerManager: NSObject {
         
         appViewModel.activeTimerID = keep.id
         appViewModel.retargetBroadcast(timerID: keep.id)
+    }
+    
+    /// Puts every timer that isn't on the desktop back on it, laid out on the grid
+    /// so a restored set doesn't land on top of itself. The timer that was pinned
+    /// keeps the spot the user left it in.
+    private func presentTimersWithoutPanels(in appViewModel: AppViewModel) {
+        var slot = nextAvailableSlot()
+        for timer in appViewModel.timerViewModels where panels[timer.id] == nil {
+            presentPanel(for: timer, in: appViewModel, at: frameOrigin(forSlot: slot), slot: slot)
+            slot = nextAvailableSlot()
+        }
     }
     
     /// The timer worth keeping when the desktop collapses: the panel holding key
@@ -186,7 +203,7 @@ class FloatingTimerManager: NSObject {
     
     // - MARK: Panels
     
-    private func presentPanel(for viewModel: TimerViewModel, in appViewModel: AppViewModel, at origin: NSPoint) {
+    private func presentPanel(for viewModel: TimerViewModel, in appViewModel: AppViewModel, at origin: NSPoint, slot: Int) {
         if let panel = panels[viewModel.id] {
             panel.setFrameOrigin(origin)
             lastActiveOrigin = origin
@@ -221,7 +238,7 @@ class FloatingTimerManager: NSObject {
         panel.hasShadow = true
         panel.backgroundColor = .clear
         
-        slots[viewModel.id] = nextAvailableSlot()
+        slots[viewModel.id] = slot
         panel.setFrameOrigin(origin)
         lastActiveOrigin = origin
         
