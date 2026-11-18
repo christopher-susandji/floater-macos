@@ -109,7 +109,7 @@ struct TimerListCell: View {
         HStack(spacing: Sizing.xs) {
             if appViewModel.isSingleTimerMode {
                 pinButton
-            } else if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
+            } else if cameraExtensionManager.isInstalled {
                 cameraButton
             }
 

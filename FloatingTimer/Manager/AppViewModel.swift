@@ -20,7 +20,6 @@ final class AppViewModel {
     var timerViewModels: [TimerViewModel] = []
 
     init() {
-        self.isCameraInputEnabled = UserDefaults.standard.object(forKey: Keys.cameraInputEnabled) as? Bool ?? true
         self.isSingleTimerMode = UserDefaults.standard.object(forKey: Keys.singleTimerMode) as? Bool ?? false
     }
 
@@ -29,20 +28,10 @@ final class AppViewModel {
     var broadcastTimerID: UUID?
 
     /// Whether the live-video source is actively pushing frames into the camera.
+    /// The camera can only ever carry one timer, so this and `broadcastTimerID`
+    /// are the whole camera state — there is no separate "show the button"
+    /// preference.
     var isBroadcasting: Bool = false
-
-    /// Whether the video-source (camera) button is shown on each timer. This is
-    /// separate from the extension actually being installed — it just hides the
-    /// UI affordance when the user doesn't want to see it. Defaults to true so
-    /// an installed extension shows the button without extra setup.
-    var isCameraInputEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(isCameraInputEnabled, forKey: Keys.cameraInputEnabled)
-            if !isCameraInputEnabled && isBroadcasting {
-                stopBroadcast()
-            }
-        }
-    }
 
     /// Whether the desktop shows one floating timer at a time instead of one per
     /// timer. Persisted, because it describes how the app behaves rather than
@@ -87,7 +76,6 @@ final class AppViewModel {
 
     private enum Keys {
         static let broadcastBackground = "broadcastBackgroundColor"
-        static let cameraInputEnabled = "cameraInputEnabled"
         static let singleTimerMode = "singleTimerMode"
     }
 

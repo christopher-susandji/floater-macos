@@ -11,39 +11,47 @@ struct SettingsView: View {
     @State private var cameraExtensionManager = CameraExtensionManager.shared
     @State private var appViewModel = AppViewModel.shared
 
+    /// The timer the camera would show: single mode pins it, otherwise the row's
+    /// camera button picks it, falling back to the newest timer so the switch is
+    /// still usable before anything has been broadcast. The camera can only carry
+    /// one timer either way.
+    private var cameraTargetID: UUID? {
+        if appViewModel.isSingleTimerMode {
+            return appViewModel.activeTimerID
+        }
+        return appViewModel.broadcastTimerID ?? appViewModel.timerViewModels.last?.id
+    }
+
+    private var broadcastBinding: Binding<Bool> {
+        Binding(
+            get: { appViewModel.isBroadcasting },
+            set: { broadcasting in
+                if broadcasting, let id = cameraTargetID {
+                    appViewModel.startBroadcast(timerID: id)
+                } else {
+                    appViewModel.stopBroadcast()
+                }
+            }
+        )
+    }
+
+    private var cameraCaption: String {
+        appViewModel.isSingleTimerMode
+            ? "The pinned timer is what the camera shows. Picking another timer moves the feed with it."
+            : "The camera button on a timer's row starts and stops the feed. Only one timer can be broadcast at a time."
+    }
+
     var body: some View {
         Form {
             Section {
                 if cameraExtensionManager.isInstalled {
-                    if appViewModel.isSingleTimerMode {
-                        Toggle(isOn: Binding(
-                            get: { appViewModel.isBroadcasting },
-                            set: { broadcast in
-                                guard let id = appViewModel.activeTimerID else { return }
-                                if broadcast {
-                                    appViewModel.startBroadcast(timerID: id)
-                                } else {
-                                    appViewModel.stopBroadcast()
-                                }
-                            }
-                        )) {
-                            Text("Broadcast the timer on the desktop")
-                        }
-                        .disabled(appViewModel.activeTimerID == nil)
-                        Text("With one timer at a time there is no camera button in the list: pin a timer, then switch the feed on here. Picking a different timer moves the feed with it.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Toggle(isOn: Binding(
-                            get: { appViewModel.isCameraInputEnabled },
-                            set: { appViewModel.isCameraInputEnabled = $0 }
-                        )) {
-                            Text("Floater as Camera Input")
-                        }
-                        Text("Shows the camera button on each timer in the main window, letting you broadcast that timer as a live video source.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    Toggle(isOn: broadcastBinding) {
+                        Text("Floater as Camera Input")
                     }
+                    .disabled(!appViewModel.isBroadcasting && cameraTargetID == nil)
+                    Text(cameraCaption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
                     Button {
                         cameraExtensionManager.install()
