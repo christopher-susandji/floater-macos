@@ -66,6 +66,20 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle(isOn: Binding(
+                    get: { appViewModel.isSingleTimerMode },
+                    set: { appViewModel.setSingleTimerMode($0) }
+                )) {
+                    Text("Show one timer at a time")
+                }
+                Text("Keeps a single floating timer on the desktop. Create a timer or pick one in the list to swap which timer is shown.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Desktop")
+            }
+
+            Section {
                 ColorPicker(
                     "Broadcast background",
                     selection: Binding(

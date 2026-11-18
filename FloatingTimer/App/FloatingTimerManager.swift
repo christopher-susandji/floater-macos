@@ -14,7 +14,7 @@ class FloatingTimerManager: NSObject {
     private var panels: [UUID: NSPanel] = [:]
     private var panelDelegates: [UUID: PanelDelegate] = [:]
     private var slots: [UUID: Int] = [:]
-
+    
     /// Origin of the most recently active timer panel (the last one created,
     /// focused or dragged). New timers spawn here so they reuse the spot the
     /// user last placed a timer in. Kept in memory for the session only, and
@@ -79,15 +79,122 @@ class FloatingTimerManager: NSObject {
         )
     }
     
+    /// The spot a new panel takes: wherever the last active timer was, or the
+    /// grid when nothing has been placed yet this session.
+    private func nextOrigin() -> NSPoint {
+        lastActiveOrigin.map(sanitizedOrigin) ?? frameOrigin(forSlot: nextAvailableSlot())
+    }
+    
+    /// Where the single desktop panel should sit when its timer is swapped: the
+    /// outgoing panel's spot, so a swap doesn't move the timer across the screen.
+    private func singlePanelOrigin(in appViewModel: AppViewModel) -> NSPoint {
+        if let activeID = appViewModel.activeTimerID, let panel = panels[activeID] {
+            return sanitizedOrigin(panel.frame.origin)
+        }
+        return nextOrigin()
+    }
+    
+    // - MARK: Showing timers
+    
+    /// Puts a timer on the desktop. In single mode that means replacing whichever
+    /// timer is already there.
     func showTimer(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
+        if appViewModel.isSingleTimerMode {
+            activate(viewModel, in: appViewModel)
+        } else {
+            presentPanel(for: viewModel, in: appViewModel, at: nextOrigin())
+        }
+    }
+    
+    /// Makes the given timer the one floating on the desktop, in single mode.
+    func activate(_ viewModel: TimerViewModel, in appViewModel: AppViewModel) {
+        guard appViewModel.isSingleTimerMode else {
+            showTimer(viewModel, in: appViewModel)
+            return
+        }
+        
+        // Already on the desktop: just bring it forward.
+        if appViewModel.activeTimerID == viewModel.id, let panel = panels[viewModel.id] {
+            lastActiveOrigin = panel.frame.origin
+            panel.makeKeyAndOrderFront(nil)
+            return
+        }
+        
+        let origin = singlePanelOrigin(in: appViewModel)
+        for id in Array(panels.keys) {
+            tearDown(id)
+        }
+        
+        appViewModel.activeTimerID = viewModel.id
+        presentPanel(for: viewModel, in: appViewModel, at: origin)
+    }
+    
+    /// Takes the floating timer off the desktop without deleting it.
+    func deactivate(in appViewModel: AppViewModel) {
+        for id in Array(panels.keys) {
+            tearDown(id)
+        }
+        appViewModel.activeTimerID = nil
+    }
+    
+    /// Collapses the desktop to one timer when single mode is turned on, keeping
+    /// the one the user is looking at. Turning the mode off leaves that panel
+    /// where it is, as the timer's ordinary panel.
+    func applySingleTimerMode(in appViewModel: AppViewModel) {
+        guard appViewModel.isSingleTimerMode else {
+            appViewModel.activeTimerID = nil
+            return
+        }
+        
+        // Nothing on the desktop to collapse; the next timer shown takes the spot.
+        guard !panels.isEmpty, let keep = preferredTimer(in: appViewModel) else {
+            appViewModel.activeTimerID = nil
+            return
+        }
+        
+        for id in Array(panels.keys) where id != keep.id {
+            tearDown(id)
+        }
+        
+        appViewModel.activeTimerID = keep.id
+    }
+    
+    /// The timer worth keeping when the desktop collapses: the panel holding key
+    /// focus, else any panel that is open, else the one being broadcast, else the
+    /// most recently created.
+    private func preferredTimer(in appViewModel: AppViewModel) -> TimerViewModel? {
+        if let keyPanel = NSApp.keyWindow as? NSPanel,
+           let id = panels.first(where: { $0.value === keyPanel })?.key,
+           let timer = appViewModel.timerViewModel(id: id) {
+            return timer
+        }
+        if let id = panels.keys.first, let timer = appViewModel.timerViewModel(id: id) {
+            return timer
+        }
+        if let broadcastID = appViewModel.broadcastTimerID,
+           let timer = appViewModel.timerViewModel(id: broadcastID) {
+            return timer
+        }
+        return appViewModel.timerViewModels.last
+    }
+    
+    // - MARK: Panels
+    
+    private func presentPanel(for viewModel: TimerViewModel, in appViewModel: AppViewModel, at origin: NSPoint) {
+        if let panel = panels[viewModel.id] {
+            panel.setFrameOrigin(origin)
+            lastActiveOrigin = origin
+            panel.makeKeyAndOrderFront(nil)
+            return
+        }
+        
         let timerView = TimerView(viewModel: viewModel) { [weak self] in
             appViewModel.removeTimer(id: viewModel.id)
-            self?.closeTimer(viewModel.id)
+            self?.closeTimer(viewModel.id, in: appViewModel)
         }
             .environment(\.controlActiveState, .key)
         let hostingController = NSHostingController(rootView: timerView)
         
-        let panelSize = NSSize(width: 220, height: 220)
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: panelSize),
             styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView],
@@ -108,20 +215,18 @@ class FloatingTimerManager: NSObject {
         panel.hasShadow = true
         panel.backgroundColor = .clear
         
-        let slot = nextAvailableSlot()
-        slots[viewModel.id] = slot
-
-        // Reuse the spot the last active timer occupied; fall back to the grid
-        // when no timer has been placed yet this session.
-        let origin = lastActiveOrigin.map(sanitizedOrigin) ?? frameOrigin(forSlot: slot)
+        slots[viewModel.id] = nextAvailableSlot()
         panel.setFrameOrigin(origin)
         lastActiveOrigin = origin
-
+        
         let panelDelegate = PanelDelegate(
             onClose: { [weak self] in
                 self?.panels.removeValue(forKey: viewModel.id)
                 self?.panelDelegates.removeValue(forKey: viewModel.id)
                 self?.slots.removeValue(forKey: viewModel.id)
+                if appViewModel.activeTimerID == viewModel.id {
+                    appViewModel.activeTimerID = nil
+                }
             },
             onMove: { [weak self] origin in
                 self?.lastActiveOrigin = origin
@@ -134,8 +239,20 @@ class FloatingTimerManager: NSObject {
         panel.makeKeyAndOrderFront(nil)
     }
     
-    func closeTimer(_ id: UUID) {
-        panels[id]?.close()
+    func closeTimer(_ id: UUID, in appViewModel: AppViewModel) {
+        tearDown(id)
+        if appViewModel.activeTimerID == id {
+            appViewModel.activeTimerID = nil
+        }
+    }
+    
+    /// Closes a panel and forgets its bookkeeping, without touching which timer
+    /// the app considers active.
+    private func tearDown(_ id: UUID) {
+        if let panel = panels[id] {
+            panel.delegate = nil
+            panel.close()
+        }
         panels.removeValue(forKey: id)
         panelDelegates.removeValue(forKey: id)
         slots.removeValue(forKey: id)

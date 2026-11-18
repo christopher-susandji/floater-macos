@@ -61,6 +61,16 @@ struct TimerListCell: View {
                     namespace: namespace,
                     accentColor: viewModel.accentColor,
                     isEditingDuration: isEditingTime,
+                    isOnDesktop: appViewModel.isSingleTimerMode
+                        ? appViewModel.activeTimerID == viewModel.id
+                        : nil,
+                    onDesktopTap: {
+                        if appViewModel.activeTimerID == viewModel.id {
+                            FloatingTimerManager.shared.deactivate(in: appViewModel)
+                        } else {
+                            FloatingTimerManager.shared.activate(viewModel, in: appViewModel)
+                        }
+                    },
                     onPlayPause: {
                         commitTimeEdit()
                         viewModel.startPause()
@@ -80,7 +90,7 @@ struct TimerListCell: View {
                     },
                     onDelete: {
                         onDelete?()
-                        FloatingTimerManager.shared.closeTimer(viewModel.id)
+                        FloatingTimerManager.shared.closeTimer(viewModel.id, in: appViewModel)
                     }
                 )
             }

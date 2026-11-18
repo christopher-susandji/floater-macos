@@ -18,6 +18,10 @@ struct TimerListControls: View {
     /// While the duration fields are open the row offers a revert in place of
     /// the pencil, and a paused timer drops its stop button.
     var isEditingDuration: Bool
+    /// Single-panel mode: whether this timer is the one on the desktop. `nil`
+    /// hides the button, which is how multi-panel mode looks.
+    var isOnDesktop: Bool? = nil
+    var onDesktopTap: () -> Void = {}
     var onPlayPause: () -> Void
     var onStop: () -> Void
     var onToggleEdit: () -> Void
@@ -46,6 +50,24 @@ struct TimerListControls: View {
     var body: some View {
         GlassEffectContainer(spacing: Sizing.xxs) {
             HStack(spacing: Sizing.xxs) {
+                if let isOnDesktop {
+                    Button {
+                        onDesktopTap()
+                    } label: {
+                        TimerControlGlyph(systemName: "macwindow", frame: 16)
+                            .foregroundStyle(
+                                isOnDesktop
+                                    ? accentColor
+                                    : accentColor.opacity(0.35)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffectID("desktop", in: namespace)
+                    .help(isOnDesktop ? "This timer is on the desktop" : "Show this timer on the desktop")
+                    
+                    divider
+                }
+                
                 if viewModel.timerState != .finished {
                     Button {
                         onPlayPause()

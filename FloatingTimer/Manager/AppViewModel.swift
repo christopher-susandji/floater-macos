@@ -21,6 +21,7 @@ final class AppViewModel {
 
     init() {
         self.isCameraInputEnabled = UserDefaults.standard.object(forKey: Keys.cameraInputEnabled) as? Bool ?? true
+        self.isSingleTimerMode = UserDefaults.standard.object(forKey: Keys.singleTimerMode) as? Bool ?? false
     }
 
     /// The timer currently selected for live-video broadcast. `nil` means
@@ -41,6 +42,27 @@ final class AppViewModel {
                 stopBroadcast()
             }
         }
+    }
+
+    /// Whether the desktop shows one floating timer at a time instead of one per
+    /// timer. Persisted, because it describes how the app behaves rather than
+    /// which timers exist. Defaults to off.
+    var isSingleTimerMode: Bool {
+        didSet {
+            UserDefaults.standard.set(isSingleTimerMode, forKey: Keys.singleTimerMode)
+        }
+    }
+
+    /// The timer currently floating on the desktop in single mode. Session-only,
+    /// since the timers themselves don't survive a relaunch either.
+    var activeTimerID: UUID?
+
+    /// Turns single-panel mode on or off, collapsing or leaving the desktop
+    /// timers to match.
+    func setSingleTimerMode(_ enabled: Bool) {
+        guard enabled != isSingleTimerMode else { return }
+        isSingleTimerMode = enabled
+        FloatingTimerManager.shared.applySingleTimerMode(in: self)
     }
 
     /// The solid backdrop color painted behind the timer in the live-video
@@ -66,6 +88,7 @@ final class AppViewModel {
     private enum Keys {
         static let broadcastBackground = "broadcastBackgroundColor"
         static let cameraInputEnabled = "cameraInputEnabled"
+        static let singleTimerMode = "singleTimerMode"
     }
 
     var canCreateTimer: Bool {
@@ -84,6 +107,9 @@ final class AppViewModel {
     func removeTimer(id: UUID) {
         if broadcastTimerID == id {
             stopBroadcast()
+        }
+        if activeTimerID == id {
+            activeTimerID = nil
         }
         timerViewModels.removeAll { $0.id == id }
     }
