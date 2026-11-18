@@ -29,6 +29,10 @@ struct TimerListCell: View {
         appViewModel.broadcastTimerID == viewModel.id
     }
 
+    private var isOnDesktop: Bool {
+        appViewModel.activeTimerID == viewModel.id
+    }
+
     /// A running timer can't be edited, matching the floating panel, where the
     /// edit screen is only reachable once the countdown is stopped or paused.
     private var canEditTime: Bool {
@@ -61,16 +65,6 @@ struct TimerListCell: View {
                     namespace: namespace,
                     accentColor: viewModel.accentColor,
                     isEditingDuration: isEditingTime,
-                    isOnDesktop: appViewModel.isSingleTimerMode
-                        ? appViewModel.activeTimerID == viewModel.id
-                        : nil,
-                    onDesktopTap: {
-                        if appViewModel.activeTimerID == viewModel.id {
-                            FloatingTimerManager.shared.deactivate(in: appViewModel)
-                        } else {
-                            FloatingTimerManager.shared.activate(viewModel, in: appViewModel)
-                        }
-                    },
                     onPlayPause: {
                         commitTimeEdit()
                         viewModel.startPause()
@@ -113,20 +107,10 @@ struct TimerListCell: View {
 
     private var titleRow: some View {
         HStack(spacing: Sizing.xs) {
-            if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
-                Button {
-                    if isBroadcasting {
-                        appViewModel.stopBroadcast()
-                    } else {
-                        appViewModel.startBroadcast(timerID: viewModel.id)
-                    }
-                } label: {
-                    Image(systemName: isBroadcasting ? "video.fill" : "video")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-                .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
+            if appViewModel.isSingleTimerMode {
+                pinButton
+            } else if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
+                cameraButton
             }
 
             TextField("", text: $viewModel.title)
@@ -151,6 +135,43 @@ struct TimerListCell: View {
                     }
                 }
         }
+    }
+
+    /// In single mode the top-left control picks which timer owns the desktop,
+    /// and that choice also decides what the camera shows: selecting a timer
+    /// while the feed is live points the feed at it. Multi mode keeps the
+    /// camera button, since there is no single timer to select.
+    private var pinButton: some View {
+        Button {
+            if isOnDesktop {
+                FloatingTimerManager.shared.deactivate(in: appViewModel)
+            } else {
+                FloatingTimerManager.shared.activate(viewModel, in: appViewModel)
+            }
+        } label: {
+            Image(systemName: isOnDesktop ? "pin.fill" : "pin")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(isOnDesktop ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
+        }
+        .buttonStyle(.plain)
+        .help(isOnDesktop ? "This timer is on the desktop" : "Show this timer on the desktop")
+        .accessibilityLabel(isOnDesktop ? "On the desktop" : "Show on the desktop")
+    }
+
+    private var cameraButton: some View {
+        Button {
+            if isBroadcasting {
+                appViewModel.stopBroadcast()
+            } else {
+                appViewModel.startBroadcast(timerID: viewModel.id)
+            }
+        } label: {
+            Image(systemName: isBroadcasting ? "video.fill" : "video")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
+        }
+        .buttonStyle(.plain)
+        .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
     }
 
     // - MARK: Time

@@ -126,6 +126,7 @@ class FloatingTimerManager: NSObject {
         }
         
         appViewModel.activeTimerID = viewModel.id
+        appViewModel.retargetBroadcast(timerID: viewModel.id)
         presentPanel(for: viewModel, in: appViewModel, at: origin)
     }
     
@@ -135,6 +136,10 @@ class FloatingTimerManager: NSObject {
             tearDown(id)
         }
         appViewModel.activeTimerID = nil
+        // Nothing is on the desktop, so the feed has nothing to show.
+        if appViewModel.isSingleTimerMode {
+            appViewModel.stopBroadcast()
+        }
     }
     
     /// Collapses the desktop to one timer when single mode is turned on, keeping
@@ -157,6 +162,7 @@ class FloatingTimerManager: NSObject {
         }
         
         appViewModel.activeTimerID = keep.id
+        appViewModel.retargetBroadcast(timerID: keep.id)
     }
     
     /// The timer worth keeping when the desktop collapses: the panel holding key
@@ -226,6 +232,9 @@ class FloatingTimerManager: NSObject {
                 self?.slots.removeValue(forKey: viewModel.id)
                 if appViewModel.activeTimerID == viewModel.id {
                     appViewModel.activeTimerID = nil
+                    if appViewModel.isSingleTimerMode {
+                        appViewModel.stopBroadcast()
+                    }
                 }
             },
             onMove: { [weak self] origin in
@@ -243,6 +252,9 @@ class FloatingTimerManager: NSObject {
         tearDown(id)
         if appViewModel.activeTimerID == id {
             appViewModel.activeTimerID = nil
+            if appViewModel.isSingleTimerMode {
+                appViewModel.stopBroadcast()
+            }
         }
     }
     

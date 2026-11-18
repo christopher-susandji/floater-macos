@@ -129,6 +129,15 @@ final class AppViewModel {
         isBroadcasting = true
     }
 
+    /// Points an already-running feed at another timer, without restarting the
+    /// camera stream. Single-panel mode uses this when the user selects a
+    /// different timer while broadcasting.
+    func retargetBroadcast(timerID: UUID) {
+        guard isBroadcasting, let timer = timerViewModel(id: timerID) else { return }
+        broadcastTimerID = timerID
+        LiveVideoFrameSource.shared.viewModel = timer
+    }
+
     /// Stops broadcasting and returns the camera to its placeholder output.
     func stopBroadcast() {
         LiveVideoFrameSource.shared.showPlaceholder()

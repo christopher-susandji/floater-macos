@@ -15,15 +15,35 @@ struct SettingsView: View {
         Form {
             Section {
                 if cameraExtensionManager.isInstalled {
-                    Toggle(isOn: Binding(
-                        get: { appViewModel.isCameraInputEnabled },
-                        set: { appViewModel.isCameraInputEnabled = $0 }
-                    )) {
-                        Text("Floater as Camera Input")
+                    if appViewModel.isSingleTimerMode {
+                        Toggle(isOn: Binding(
+                            get: { appViewModel.isBroadcasting },
+                            set: { broadcast in
+                                guard let id = appViewModel.activeTimerID else { return }
+                                if broadcast {
+                                    appViewModel.startBroadcast(timerID: id)
+                                } else {
+                                    appViewModel.stopBroadcast()
+                                }
+                            }
+                        )) {
+                            Text("Broadcast the timer on the desktop")
+                        }
+                        .disabled(appViewModel.activeTimerID == nil)
+                        Text("With one timer at a time there is no camera button in the list: pin a timer, then switch the feed on here. Picking a different timer moves the feed with it.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle(isOn: Binding(
+                            get: { appViewModel.isCameraInputEnabled },
+                            set: { appViewModel.isCameraInputEnabled = $0 }
+                        )) {
+                            Text("Floater as Camera Input")
+                        }
+                        Text("Shows the camera button on each timer in the main window, letting you broadcast that timer as a live video source.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    Text("Shows the camera button on each timer in the main window, letting you broadcast that timer as a live video source.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 } else {
                     Button {
                         cameraExtensionManager.install()
