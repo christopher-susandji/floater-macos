@@ -10,10 +10,11 @@ import SwiftUI
 struct TimerListCell: View {
     @Bindable var viewModel: TimerViewModel
     @Environment(AppViewModel.self) private var appViewModel
-    @State private var cameraExtensionManager = CameraExtensionManager.shared
     var onDelete: (() -> Void)?
     @Namespace private var namespace
     @FocusState private var isTitleFocused: Bool
+
+    @State private var isHovered = false
 
     @State private var isEditingTime = false
     @State private var draftHours = 0
@@ -25,8 +26,8 @@ struct TimerListCell: View {
         case hours, minutes, seconds
     }
 
-    private var isBroadcasting: Bool {
-        appViewModel.broadcastTimerID == viewModel.id
+    private var isOnDesktop: Bool {
+        appViewModel.activeTimerID == viewModel.id
     }
 
     /// A running timer can't be edited, matching the floating panel, where the
@@ -80,13 +81,19 @@ struct TimerListCell: View {
                     },
                     onDelete: {
                         onDelete?()
-                        FloatingTimerManager.shared.closeTimer(viewModel.id)
+                        FloatingTimerManager.shared.closeTimer(viewModel.id, in: appViewModel)
                     }
                 )
             }
         }
         .padding(Sizing.xs)
         .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
+            }
+        }
+        .animation(.easeInOut(duration: 0.12), value: appViewModel.isSingleTimerMode)
         .onTapGesture {
             isTitleFocused = false
             focusedTimeField = nil
@@ -102,22 +109,15 @@ struct TimerListCell: View {
     // - MARK: Title
 
     private var titleRow: some View {
-        HStack(spacing: Sizing.xs) {
-            if cameraExtensionManager.isInstalled && appViewModel.isCameraInputEnabled {
-                Button {
-                    if isBroadcasting {
-                        appViewModel.stopBroadcast()
-                    } else {
-                        appViewModel.startBroadcast(timerID: viewModel.id)
-                    }
-                } label: {
-                    Image(systemName: isBroadcasting ? "video.fill" : "video")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(isBroadcasting ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-                .help(isBroadcasting ? "Stop broadcasting to Keynote" : "Broadcast this timer as a live video source")
-            }
+        HStack(spacing: 0) {
+            // Kept in the layout at all times so showing or hiding it can't
+            // change the row's height; only its width and opacity animate.
+            pinButton
+                .frame(width: showsPinButton ? 14 : 0, height: 14)
+                .padding(.trailing, showsPinButton ? Sizing.xs : 0)
+                .opacity(showsPinButton ? 1 : 0)
+                .allowsHitTesting(showsPinButton)
+                .clipped()
 
             TextField("", text: $viewModel.title)
                 .overlay(alignment: .leading) {
@@ -141,6 +141,34 @@ struct TimerListCell: View {
                     }
                 }
         }
+    }
+
+    /// The one control at the top of the row: it picks the timer, which is what
+    /// the desktop shows in single mode and what the camera shows either way.
+    /// It stays visible once pinned and otherwise only appears while the row is
+    /// hovered, so an idle list stays quiet.
+    private var pinButton: some View {
+        Button {
+            if isOnDesktop {
+                FloatingTimerManager.shared.deactivate(in: appViewModel)
+            } else {
+                FloatingTimerManager.shared.activate(viewModel, in: appViewModel)
+            }
+        } label: {
+            Image(systemName: isOnDesktop ? "pin.fill" : "pin")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(isOnDesktop ? viewModel.accentColor : viewModel.textSecondary.opacity(0.6))
+        }
+        .buttonStyle(.plain)
+        .help(isOnDesktop ? "This timer is the chosen one" : "Choose this timer")
+        .accessibilityLabel(isOnDesktop ? "Chosen timer" : "Choose this timer")
+    }
+
+    /// With one timer at a time the pin is how you swap which timer floats, so it
+    /// is only offered in that mode: always visible once pinned, otherwise on
+    /// hover.
+    private var showsPinButton: Bool {
+        appViewModel.isSingleTimerMode && (isOnDesktop || isHovered)
     }
 
     // - MARK: Time

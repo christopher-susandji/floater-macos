@@ -11,17 +11,47 @@ struct SettingsView: View {
     @State private var cameraExtensionManager = CameraExtensionManager.shared
     @State private var appViewModel = AppViewModel.shared
 
+    /// The timer the camera would show: single mode pins it, otherwise the row's
+    /// camera button picks it, falling back to the newest timer so the switch is
+    /// still usable before anything has been broadcast. The camera can only carry
+    /// one timer either way.
+    private var cameraTargetID: UUID? {
+        if appViewModel.isSingleTimerMode {
+            return appViewModel.activeTimerID
+        }
+        return appViewModel.activeTimerID
+            ?? appViewModel.broadcastTimerID
+            ?? appViewModel.timerViewModels.last?.id
+    }
+
+    private var broadcastBinding: Binding<Bool> {
+        Binding(
+            get: { appViewModel.isBroadcasting },
+            set: { broadcasting in
+                if broadcasting, let id = cameraTargetID {
+                    appViewModel.startBroadcast(timerID: id)
+                } else {
+                    appViewModel.stopBroadcast()
+                }
+            }
+        )
+    }
+
+    private var cameraCaption: String {
+        appViewModel.isSingleTimerMode
+            ? "The pinned timer is what the desktop and the camera show. The top of the list starts out pinned."
+            : "One floating timer per timer. Turn this on to keep a single timer on the desktop."
+    }
+
     var body: some View {
         Form {
             Section {
                 if cameraExtensionManager.isInstalled {
-                    Toggle(isOn: Binding(
-                        get: { appViewModel.isCameraInputEnabled },
-                        set: { appViewModel.isCameraInputEnabled = $0 }
-                    )) {
+                    Toggle(isOn: broadcastBinding) {
                         Text("Floater as Camera Input")
                     }
-                    Text("Shows the camera button on each timer in the main window, letting you broadcast that timer as a live video source.")
+                    .disabled(!appViewModel.isBroadcasting && cameraTargetID == nil)
+                    Text(cameraCaption)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -63,6 +93,20 @@ struct SettingsView: View {
                         .padding(.top, 4)
                     }
                 }
+            }
+
+            Section {
+                Toggle(isOn: Binding(
+                    get: { appViewModel.isSingleTimerMode },
+                    set: { appViewModel.setSingleTimerMode($0) }
+                )) {
+                    Text("Show one timer at a time")
+                }
+                Text("Keeps a single floating timer on the desktop. Pin a timer in the list to swap which one is shown; the top of the list starts out pinned. Turning on Floater as Camera Input switches this on too.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Desktop")
             }
 
             Section {

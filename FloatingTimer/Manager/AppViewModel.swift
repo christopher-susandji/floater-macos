@@ -20,7 +20,7 @@ final class AppViewModel {
     var timerViewModels: [TimerViewModel] = []
 
     init() {
-        self.isCameraInputEnabled = UserDefaults.standard.object(forKey: Keys.cameraInputEnabled) as? Bool ?? true
+        self.isSingleTimerMode = UserDefaults.standard.object(forKey: Keys.singleTimerMode) as? Bool ?? false
     }
 
     /// The timer currently selected for live-video broadcast. `nil` means
@@ -28,19 +28,30 @@ final class AppViewModel {
     var broadcastTimerID: UUID?
 
     /// Whether the live-video source is actively pushing frames into the camera.
+    /// The camera can only ever carry one timer, so this and `broadcastTimerID`
+    /// are the whole camera state — there is no separate "show the button"
+    /// preference.
     var isBroadcasting: Bool = false
 
-    /// Whether the video-source (camera) button is shown on each timer. This is
-    /// separate from the extension actually being installed — it just hides the
-    /// UI affordance when the user doesn't want to see it. Defaults to true so
-    /// an installed extension shows the button without extra setup.
-    var isCameraInputEnabled: Bool {
+    /// Whether the desktop shows one floating timer at a time instead of one per
+    /// timer. Persisted, because it describes how the app behaves rather than
+    /// which timers exist. Defaults to off.
+    var isSingleTimerMode: Bool {
         didSet {
-            UserDefaults.standard.set(isCameraInputEnabled, forKey: Keys.cameraInputEnabled)
-            if !isCameraInputEnabled && isBroadcasting {
-                stopBroadcast()
-            }
+            UserDefaults.standard.set(isSingleTimerMode, forKey: Keys.singleTimerMode)
         }
+    }
+
+    /// The timer currently floating on the desktop in single mode. Session-only,
+    /// since the timers themselves don't survive a relaunch either.
+    var activeTimerID: UUID?
+
+    /// Turns single-panel mode on or off, collapsing or leaving the desktop
+    /// timers to match.
+    func setSingleTimerMode(_ enabled: Bool) {
+        guard enabled != isSingleTimerMode else { return }
+        isSingleTimerMode = enabled
+        FloatingTimerManager.shared.applySingleTimerMode(in: self)
     }
 
     /// The solid backdrop color painted behind the timer in the live-video
@@ -65,7 +76,7 @@ final class AppViewModel {
 
     private enum Keys {
         static let broadcastBackground = "broadcastBackgroundColor"
-        static let cameraInputEnabled = "cameraInputEnabled"
+        static let singleTimerMode = "singleTimerMode"
     }
 
     var canCreateTimer: Bool {
@@ -77,15 +88,33 @@ final class AppViewModel {
         guard canCreateTimer else { return nil }
         let model = TimerModel(title: title, duration: TimeInterval(seconds), type: type)
         let viewModel = TimerViewModel(model: model)
-        timerViewModels.append(viewModel)
+        // With one timer at a time the desktop carries the top of the list, so a
+        // new timer goes there; otherwise timers queue up in creation order.
+        if isSingleTimerMode {
+            timerViewModels.insert(viewModel, at: 0)
+        } else {
+            timerViewModels.append(viewModel)
+        }
         return viewModel
     }
 
     func removeTimer(id: UUID) {
+        let wasActive = activeTimerID == id
         if broadcastTimerID == id {
             stopBroadcast()
         }
+        if wasActive {
+            activeTimerID = nil
+        }
         timerViewModels.removeAll { $0.id == id }
+
+        guard isSingleTimerMode, wasActive else { return }
+        // The desktop can't stay empty, so the top of the list takes over.
+        if let next = timerViewModels.first {
+            FloatingTimerManager.shared.activate(next, in: self)
+        } else {
+            FloatingTimerManager.shared.deactivate(in: self)
+        }
     }
 
     func timerViewModel(id: UUID) -> TimerViewModel? {
@@ -95,12 +124,28 @@ final class AppViewModel {
     // - MARK: Live video broadcast
 
     /// Starts (or restarts) broadcasting the given timer as a live-video source.
+    /// The camera can only carry one timer, so broadcasting also puts the app in
+    /// single-panel mode with that timer chosen.
     func startBroadcast(timerID: UUID) {
+        activeTimerID = timerID
         broadcastTimerID = timerID
         LiveVideoFrameSource.shared.viewModel = timerViewModel(id: timerID)
         LiveVideoFrameSource.shared.backgroundColor = broadcastBackgroundColor
         LiveVideoFrameSource.shared.start()
         isBroadcasting = true
+
+        if !isSingleTimerMode {
+            setSingleTimerMode(true)
+        }
+    }
+
+    /// Points an already-running feed at another timer, without restarting the
+    /// camera stream. Single-panel mode uses this when the user selects a
+    /// different timer while broadcasting.
+    func retargetBroadcast(timerID: UUID) {
+        guard isBroadcasting, let timer = timerViewModel(id: timerID) else { return }
+        broadcastTimerID = timerID
+        LiveVideoFrameSource.shared.viewModel = timer
     }
 
     /// Stops broadcasting and returns the camera to its placeholder output.
